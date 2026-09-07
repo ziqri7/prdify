@@ -1,5 +1,299 @@
 import { NextResponse } from "next/server";
 
+/** Gateway configuration — enable whichever gateway(s) you use */
+const GATEWAYS = {
+  midtrans: !!process.env.MIDTRANS_SERVER_KEY,
+  sumopod: !!process.env.SUMOPOD_API_KEY,
+  doku: !!process.env.DOKU_CLIENT_ID,
+  ipaymu: !!process.env.IPAYMU_API_KEY,
+} as const;
+
+function isGatewayAvailable(name: keyof typeof GATEWAYS): boolean {
+  return GATEWAYS[name];
+}
+
+function getActiveGateways(): string[] {
+  return (Object.keys(GATEWAYS) as (keyof typeof GATEWAYS)[]).filter((k) => GATEWAYS[k]);
+}
+
+// ---------------------------------------------------------------------------
+// MIDTRANS
+// ---------------------------------------------------------------------------
+async function createMidtransInvoice(pkg: string, amount: number, paymentMethod: string) {
+  const orderId = `BPAI-${pkg}-${Date.now()}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
+
+  const payload: Record<string, unknown> = {
+    transaction_details: {
+      order_id: orderId,
+      gross_amount: amount,
+    },
+    credit_card: { secure: true },
+    customer_details: {},
+    enabled_payments: getMidtransPaymentMethods(paymentMethod),
+    callbacks: {
+      finish: `${appUrl}/questionnaire?payment=success`,
+      error: `${appUrl}/payment?status=failed`,
+      pending: `${appUrl}/payment?status=pending`,
+    },
+    expiry: {
+      duration: 24,
+      unit: "hours",
+    },
+  };
+
+  const auth = Buffer.from(process.env.MIDTRANS_SERVER_KEY + ":").toString("base64");
+  const isProduction = process.env.MIDTRANS_SERVER_KEY?.startsWith("Mid-server");
+  const baseUrl = isProduction
+    ? "https://app.midtrans.com/snap/v1/transactions"
+    : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
+  const response = await fetch(baseUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Basic ${auth}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Midtrans error");
+
+  return {
+    id: data.token,
+    external_id: orderId,
+    amount,
+    status: "PENDING",
+    payment_method: paymentMethod,
+    invoice_url: data.redirect_url,
+    gateway: "midtrans",
+  };
+}
+
+function getMidtransPaymentMethods(method: string): string[] {
+  const map: Record<string, string[]> = {
+    bca: ["bca_klikbca", "bca_klikpay"],
+    mandiri: ["mandiri_clickpay", "echannel"],
+    bri: ["bri_epay"],
+    bni: ["bni_va"],
+    gopay: ["gopay"],
+    ovo: ["ovo"],
+    dana: ["gopay"], // dana via gopay on midtrans
+    qris: ["gopay", "shopeepay", "other_qris"],
+    shopeepay: ["shopeepay"],
+    akulaku: ["akulaku"],
+  };
+  return map[method] || ["gopay", "bca_klikbca", "bni_va", "mandiri_clickpay"];
+}
+
+// ---------------------------------------------------------------------------
+// SUMOPOD PAY
+// ---------------------------------------------------------------------------
+async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: string) {
+  const orderId = `BPAI-${pkg}-${Date.now()}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
+
+  const payload = {
+    order_id: orderId,
+    amount,
+    currency: "IDR",
+    expires_in_hours: 24,
+    success_return_url: `${appUrl}/questionnaire?payment=success`,
+    cancel_return_url: `${appUrl}/payment?status=failed`,
+    notification_url: `${appUrl}/api/payment`,
+    description: `BuatPakeAI - ${pkg === "pro" ? "Pro" : "Basic"} Package`,
+  };
+
+  const baseUrl =
+    process.env.SUMOPOD_BASE_URL || "https://api-pay-sandbox.sumopod.com/api/v1";
+
+  const response = await fetch(`${baseUrl}/payments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "x-api-key": process.env.SUMOPOD_API_KEY!,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "SumoPod error");
+
+  return {
+    id: data.id || orderId,
+    external_id: orderId,
+    amount,
+    status: data.status || "PENDING",
+    payment_method: paymentMethod,
+    invoice_url: data.payment_link_url || data.url,
+    gateway: "sumopod",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// DOKU
+// ---------------------------------------------------------------------------
+async function createDokuInvoice(pkg: string, amount: number, paymentMethod: string) {
+  const externalId = `BPAI-${pkg}-${Date.now()}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
+
+  const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0] + "000";
+  const signature = Buffer.from(
+    process.env.DOKU_CLIENT_ID + ":" + process.env.DOKU_SECRET_KEY + ":" + timestamp
+  ).toString("base64");
+
+  const payload = {
+    client: { id: process.env.DOKU_CLIENT_ID },
+    order: {
+      invoice_number: externalId,
+      amount,
+      currency: "IDR",
+      callback_url: `${appUrl}/api/payment`,
+      auto_redirect: true,
+      url_failed: `${appUrl}/payment?status=failed`,
+      url_success: `${appUrl}/questionnaire?payment=success`,
+      notify_url: `${appUrl}/api/payment`,
+    },
+    payment: {
+      payment_due_date: 24,
+      payment_method_types: getDokuPaymentMethods(paymentMethod),
+    },
+    customer: {},
+    billing_address: {},
+    line_items: [
+      {
+        name: `BuatPakeAI - ${pkg === "pro" ? "Pro" : "Basic"} PRD`,
+        quantity: 1,
+        price: amount,
+      },
+    ],
+  };
+
+  const response = await fetch(
+    process.env.DOKU_IS_PRODUCTION === "true"
+      ? "https://api.doku.com/checkout/v1/payment"
+      : "https://api-sandbox.doku.com/checkout/v1/payment",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Signature: signature,
+        "Request-Timestamp": timestamp,
+        "Client-Id": process.env.DOKU_CLIENT_ID!,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "DOKU error");
+
+  return {
+    id: data.order?.invoice_number || externalId,
+    external_id: externalId,
+    amount,
+    status: "PENDING",
+    payment_method: paymentMethod,
+    invoice_url: data.payment?.url || data.order?.url,
+    gateway: "doku",
+  };
+}
+
+function getDokuPaymentMethods(method: string): string[] {
+  const map: Record<string, string[]> = {
+    bca: ["VIRTUAL_ACCOUNT_BCA"],
+    mandiri: ["VIRTUAL_ACCOUNT_MANDIRI"],
+    bri: ["VIRTUAL_ACCOUNT_BRI"],
+    bni: ["VIRTUAL_ACCOUNT_BNI"],
+    gopay: ["GOPAY"],
+    ovo: ["OVO"],
+    dana: ["DANA"],
+    qris: ["QRIS"],
+    shopeepay: ["SHOPEEPAY"],
+    credit_card: ["CREDIT_CARD"],
+  };
+  return map[method] || ["VIRTUAL_ACCOUNT_BCA", "GOPAY", "QRIS"];
+}
+
+// ---------------------------------------------------------------------------
+// IPAYMU
+// ---------------------------------------------------------------------------
+async function createIpaymuInvoice(pkg: string, amount: number, paymentMethod: string) {
+  const externalId = `BPAI-${pkg}-${Date.now()}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
+
+  const body = new URLSearchParams();
+  body.append("product", `BuatPakeAI ${pkg === "pro" ? "Pro" : "Basic"}`);
+  body.append("qty", "1");
+  body.append("price", amount.toString());
+  body.append("description", `PRD - ${pkg === "pro" ? "Pro" : "Basic"} Package`);
+  body.append("returnUrl", `${appUrl}/questionnaire?payment=success`);
+  body.append("cancelUrl", `${appUrl}/payment?status=failed`);
+  body.append("notifyUrl", `${appUrl}/api/payment`);
+  body.append("referenceId", externalId);
+  body.append("paymentMethod", getIpaymuPaymentMethod(paymentMethod));
+
+  const hash = require("crypto")
+    .createHash("sha256")
+    .update(
+      `BUATPAKEAI:${amount}:${process.env.IPAYMU_API_KEY}:${process.env.IPAYMU_PRIVATE_KEY}`
+    )
+    .digest("hex");
+
+  const isProduction = process.env.IPAYMU_MODE === "production";
+  const baseUrl = isProduction ? "https://api.ipaymu.com" : "https://sandbox.ipaymu.com";
+
+  const response = await fetch(`${baseUrl}/api/v2/payment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      signature: hash,
+      va: process.env.IPAYMU_VA || "BUATPAKEAI",
+      timestamp: Math.floor(Date.now() / 1000).toString(),
+      key: process.env.IPAYMU_API_KEY!,
+    },
+    body: body.toString(),
+  });
+
+  const data = await response.json();
+  if (!response.ok || data.Status !== 200) throw new Error(data.Message || "Ipaymu error");
+
+  return {
+    id: data.Data?.SessionID || externalId,
+    external_id: externalId,
+    amount,
+    status: "PENDING",
+    payment_method: paymentMethod,
+    invoice_url: data.Data?.Url,
+    gateway: "ipaymu",
+  };
+}
+
+function getIpaymuPaymentMethod(method: string): string {
+  const map: Record<string, string> = {
+    bca: "bca",
+    mandiri: "mandiri",
+    bri: "bri",
+    bni: "bni",
+    gopay: "gopay",
+    ovo: "ovo",
+    dana: "dana",
+    qris: "qris",
+    shopeepay: "shopeepay",
+    akulaku: "akulaku",
+    credit_card: "creditcard",
+    indomaret: "indomaret",
+    alfamart: "alfamaret",
+  };
+  return map[method] || "qris";
+}
+
+// ---------------------------------------------------------------------------
+// MAIN HANDLER
+// ---------------------------------------------------------------------------
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -25,83 +319,72 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cek apakah Xendit API key tersedia
-    if (process.env.XENDIT_SECRET_API_KEY) {
+    // Coba gateway aktif secara berurutan, urut berdasarkan preferensi
+    const gateways = getActiveGateways();
+
+    // Jika tidak ada gateway aktif, fallback ke mock
+    if (gateways.length === 0) {
+      const invoice = {
+        id: `INV-${Date.now()}`,
+        external_id: `BPAI-${pkg}-${Date.now()}`,
+        amount,
+        status: "PENDING",
+        payment_method: paymentMethod,
+        invoice_url: "#",
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        gateway: "mock",
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: invoice,
+        note: "Mode development. Aktifkan salah satu gateway: Midtrans, SumoPod, DOKU, atau Ipaymu dengan mengatur environment variable.",
+        available_gateways: Object.keys(GATEWAYS),
+      });
+    }
+
+    // Coba setiap gateway yang aktif
+    let lastError: unknown;
+
+    // Prioritaskan gateway: midtrans > sumopod > doku > ipaymu
+    const preferredOrder: (keyof typeof GATEWAYS)[] = ["midtrans", "sumopod", "doku", "ipaymu"];
+
+    for (const gw of preferredOrder) {
+      if (!isGatewayAvailable(gw)) continue;
+
       try {
-        // Xendit Invoice API
-        const xenditPayload = {
-          external_id: `PRDIFY-${pkg}-${Date.now()}`,
-          amount,
-          description: `PRDify - ${pkg === "pro" ? "Pro" : "Basic"} Package`,
-          invoice_duration: 86400,
-          customer: {
-            // Will be filled with actual customer data
-          },
-          customer_notification_preference: {
-            invoice_paid: ["email", "whatsapp"],
-          },
-          success_redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://prdify.vercel.app"}/questionnaire?payment=success`,
-          failure_redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://prdify.vercel.app"}/payment?status=failed`,
-          payment_methods: getXenditPaymentMethods(paymentMethod),
-          currency: "IDR",
-        };
-
-        const auth = Buffer.from(
-          process.env.XENDIT_SECRET_API_KEY + ":"
-        ).toString("base64");
-
-        const response = await fetch(
-          "https://api.xendit.co/v2/invoices",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${auth}`,
-            },
-            body: JSON.stringify(xenditPayload),
-          }
-        );
-
-        const xenditResponse = await response.json();
-
-        if (!response.ok) {
-          throw new Error(xenditResponse.message || "Xendit error");
+        let result;
+        switch (gw) {
+          case "midtrans":
+            result = await createMidtransInvoice(pkg, amount, paymentMethod);
+            break;
+          case "sumopod":
+            result = await createSumopodInvoice(pkg, amount, paymentMethod);
+            break;
+          case "doku":
+            result = await createDokuInvoice(pkg, amount, paymentMethod);
+            break;
+          case "ipaymu":
+            result = await createIpaymuInvoice(pkg, amount, paymentMethod);
+            break;
         }
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            id: xenditResponse.id,
-            external_id: xenditResponse.external_id,
-            amount: xenditResponse.amount,
-            status: xenditResponse.status,
-            payment_method: paymentMethod,
-            invoice_url: xenditResponse.invoice_url,
-            expires_at: xenditResponse.expiry_date,
-          },
-        });
-      } catch (xenditError) {
-        console.error("Xendit API error:", xenditError);
-        // Fallback ke mock jika Xendit gagal
+        return NextResponse.json({ success: true, data: result });
+      } catch (err) {
+        console.error(`${gw} error:`, err);
+        lastError = err;
+        // Lanjut ke gateway berikutnya
       }
     }
 
-    // Fallback: Mock invoice (untuk development)
-    const invoice = {
-      id: `INV-${Date.now()}`,
-      external_id: `PRDIFY-${pkg}-${Date.now()}`,
-      amount,
-      status: "PENDING",
-      payment_method: paymentMethod,
-      invoice_url: `https://checkout.xendit.co/invoice/${Date.now()}`,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: invoice,
-      note: "Pembayaran dalam mode development. Atur XENDIT_SECRET_API_KEY untuk live payment.",
-    });
+    // Semua gateway gagal
+    console.error("All gateways failed:", lastError);
+    return NextResponse.json(
+      {
+        error: "Semua gateway pembayaran gagal. Silakan coba lagi nanti.",
+        detail: lastError instanceof Error ? lastError.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   } catch (error) {
     console.error("Payment error:", error);
     return NextResponse.json(
@@ -111,28 +394,16 @@ export async function POST(request: Request) {
   }
 }
 
-// Xendit webhook handler (dipanggil Xendit saat status pembayaran berubah)
+// Webhook handler untuk semua gateway
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, external_id, status, paid_amount } = body;
-
-    // Verifikasi callback token
-    const callbackToken = request.headers.get("x-callback-token");
-    if (
-      process.env.XENDIT_WEBHOOK_VERIFICATION_TOKEN &&
-      callbackToken !== process.env.XENDIT_WEBHOOK_VERIFICATION_TOKEN
-    ) {
-      return NextResponse.json(
-        { error: "Invalid callback token" },
-        { status: 401 }
-      );
-    }
+    const { id, external_id, status, paid_amount, gateway } = body;
 
     // Log payment status
-    console.log(`Payment ${external_id || id}: ${status}`);
+    console.log(`Payment ${external_id || id} via ${gateway || "unknown"}: ${status}`);
 
-    // Di production: update status payment di database Supabase
+    // Di production: update status di database Supabase
     // await supabase.from('payments').update({ status, paid_amount }).eq('external_id', external_id);
 
     return NextResponse.json({
@@ -146,20 +417,4 @@ export async function PATCH(request: Request) {
       { status: 500 }
     );
   }
-}
-
-function getXenditPaymentMethods(
-  method: string
-): string[] {
-  const methodMap: Record<string, string[]> = {
-    bca: ["BCA"],
-    mandiri: ["MANDIRI"],
-    bri: ["BRI"],
-    bni: ["BNI"],
-    gopay: ["GOPAY"],
-    ovo: ["OVO"],
-    dana: ["DANA"],
-    qris: ["QRIS"],
-  };
-  return methodMap[method] || ["BCA", "MANDIRI", "GOPAY", "QRIS"];
 }

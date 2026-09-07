@@ -40,7 +40,7 @@ export default function PreviewPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "PRDify-PRD.md";
+    a.download = "BuatPakeAI-PRD.md";
     a.click();
     URL.revokeObjectURL(url);
   };

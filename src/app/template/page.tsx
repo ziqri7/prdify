@@ -66,7 +66,7 @@ const templateContent = `# PRD: [Nama Produk]
 
 ---
 
-*Template PRD ini disediakan oleh PRDify*
+*Template PRD ini disediakan oleh BuatPakeAI*
 `;
 
 export default function TemplatePage() {
@@ -75,7 +75,7 @@ export default function TemplatePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Template-PRD-PRDify.md";
+    a.download = "Template-PRD-BuatPakeAI.md";
     a.click();
     URL.revokeObjectURL(url);
   };

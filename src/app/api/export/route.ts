@@ -171,10 +171,10 @@ async function generatePdfBuffer(
       Document,
       {
         title: docTitle,
-        author: "PRDify",
+        author: "BuatPakeAI",
         subject: "Product Requirements Document",
-        creator: "PRDify",
-        producer: "PRDify",
+        creator: "BuatPakeAI",
+        producer: "BuatPakeAI",
       },
       React.createElement(
         Page,
@@ -192,7 +192,7 @@ async function generatePdfBuffer(
           },
           React.createElement(Text, {
             style: { fontSize: 9, color: "#9CA3AF" },
-            children: "PRDify — PRD Generator",
+            children: "BuatPakeAI — PRD Generator",
           }),
           React.createElement(Text, {
             style: { fontSize: 9, color: "#9CA3AF" },
@@ -227,7 +227,7 @@ async function generatePdfBuffer(
             textAlign: "center",
             marginBottom: 40,
           },
-          children: `Dibuat dengan PRDify — ${new Date().toLocaleDateString("id-ID", {
+          children: `Dibuat dengan BuatPakeAI — ${new Date().toLocaleDateString("id-ID", {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -250,7 +250,7 @@ async function generatePdfBuffer(
               textAlign: "center",
             },
             children:
-              "Dokumen ini dibuat secara otomatis oleh PRDify (prdify.vercel.app)",
+              "Dokumen ini dibuat secara otomatis oleh BuatPakeAI (buatpakeai.vercel.app)",
           }),
         })
       )
@@ -275,7 +275,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const docTitle = title || "PRDify-PRD";
+    const docTitle = title || "BuatPakeAI-PRD";
 
     switch (format) {
       case "markdown": {

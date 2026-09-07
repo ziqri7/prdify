@@ -41,7 +41,7 @@ function PaymentContent() {
   const handlePay = () => {
     if (!selectedMethod) return;
     setPaymentStatus("pending");
-    // In production, call Xendit/Midtrans API here
+    // In production, call payment gateway API here
     // For now, simulate redirect to questionnaire
     router.push("/questionnaire");
   };
@@ -132,7 +132,7 @@ function PaymentContent() {
           </Button>
 
           <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-            Pembayaran diproses dengan aman via Xendit. Data kamu aman.
+            Pembayaran diproses dengan aman via Midtrans, SumoPod, DOKU, atau Ipaymu. Data kamu aman.
           </p>
         </div>
       </div>

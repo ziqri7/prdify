@@ -162,7 +162,7 @@ ${sections.map((s) => `## ${s.title}\n\n${s.content}`).join("\n\n---\n\n")}
 
 ---
 
-*Dokumen ini dibuat secara otomatis oleh PRDify — generator PRD berbasis AI.*
+*Dokumen ini dibuat secara otomatis oleh BuatPakeAI — generator PRD berbasis AI.*
 `;
 
   return {

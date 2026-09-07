@@ -96,7 +96,7 @@ export const questions: Question[] = [
     id: "integrations",
     question: "Apakah perlu integrasi dengan pihak ketiga? (pisahkan dengan koma)",
     type: "textarea",
-    placeholder: "Contoh: Payment Gateway (Midtrans/Xendit), API Ongkir, Google Analytics, Mailchimp",
+    placeholder: "Contoh: Payment Gateway (Midtrans/SumoPod/DOKU/Ipaymu), API Ongkir, Google Analytics, Mailchimp",
     required: false,
   },
   {

@@ -39,7 +39,7 @@ const targetAudience = [
     icon: Users,
     title: "Newbie / Non-teknis",
     description:
-      "Punya ide website tapi bingung mulai dari mana? PRDify bantu kamu tuangkan ide jadi dokumen PRD.",
+      "Punya ide website tapi bingung mulai dari mana? BuatPakeAI bantu kamu tuangkan ide jadi dokumen PRD.",
   },
   {
     icon: GraduationCap,
@@ -64,7 +64,7 @@ const steps = [
   {
     num: "02",
     title: "Bayar",
-    desc: "Pembayaran mudah via Midtrans/Xendit",
+    desc: "Pembayaran mudah via Midtrans, SumoPod, DOKU, atau Ipaymu",
   },
   {
     num: "03",
@@ -99,6 +99,9 @@ export default function HomePage() {
               <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
                 {APP_TAGLINE}
               </span>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <span className="text-sm font-medium text-violet-600 dark:text-violet-400">by BuatPakeAI</span>
+              </div>
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-gray-600 dark:text-gray-400 sm:text-xl">

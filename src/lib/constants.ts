@@ -1,7 +1,7 @@
-export const APP_NAME = "PRDify";
+export const APP_NAME = "BuatPakeAI";
 export const APP_TAGLINE = "Bikin PRD Profesional, Cuma Jawab Pertanyaan!";
 export const APP_DESCRIPTION =
-  "PRDify membantu kamu membuat Product Requirements Document (PRD) yang rapi dan profesional — cukup jawab pertanyaan-pertanyaan sederhana, dan sistem akan menghasilkan PRD untukmu secara instan.";
+  "BuatPakeAI membantu kamu membuat Product Requirements Document (PRD) yang rapi dan profesional — cukup jawab pertanyaan-pertanyaan sederhana, dan sistem akan menghasilkan PRD untukmu secara instan.";
 
 export const PRICING = {
   basic: {
