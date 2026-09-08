@@ -63,9 +63,14 @@ export default function LoginPage() {
       });
       if (error) throw error;
 
-      // Gunakan full-page redirect (bukan popup) untuk hindari popup blocker
       if (data?.url) {
+        // Full-page redirect (PKCE flow — Supabase akan redirect ke /auth/callback?code=...)
         window.location.href = data.url;
+      } else {
+        // Fallback: direct ke Supabase authorize URL (implicit grant — redirect ke callback-client)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const redirectTo = `${window.location.origin}/auth/callback-client`;
+        window.location.href = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal login dengan Google");
