@@ -51,7 +51,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -62,6 +62,11 @@ export default function LoginPage() {
         },
       });
       if (error) throw error;
+
+      // Gunakan full-page redirect (bukan popup) untuk hindari popup blocker
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal login dengan Google");
       setLoading(false);
