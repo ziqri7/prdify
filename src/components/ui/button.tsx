@@ -9,16 +9,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-300 hover:from-violet-700 hover:to-indigo-700 dark:shadow-violet-900/30 dark:hover:shadow-violet-800/40",
+          "bg-[#df5c37] text-white shadow-lg shadow-[#df5c37]/20 hover:shadow-xl hover:shadow-[#df5c37]/30 hover:bg-[#c94d2a]",
         destructive:
           "bg-red-500 text-white shadow-sm hover:bg-red-600",
         outline:
-          "border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800",
+          "border-2 border-[#dcdee1] dark:border-[#3a4155] bg-white dark:bg-[#2a3040] hover:bg-[#f3f5f6] dark:hover:bg-[#3a4155] hover:border-[#df5c37]/40 dark:hover:border-[#df5c37]/60",
         secondary:
-          "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700",
+          "bg-[#e7eaec] dark:bg-[#2a3040] text-gray-900 dark:text-gray-100 hover:bg-[#dcdee1] dark:hover:bg-[#3a4155]",
         ghost:
-          "hover:bg-gray-100 dark:hover:bg-gray-800",
-        link: "text-violet-600 underline-offset-4 hover:underline",
+          "hover:bg-[#f3f5f6] dark:hover:bg-[#2a3040]",
+        link: "text-[#df5c37] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-11 px-5 py-2",

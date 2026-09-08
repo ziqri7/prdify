@@ -2,12 +2,12 @@
 
 import { create } from "zustand";
 import type { PRDAnswers } from "@/lib/prd-generator";
-import type { PackageType } from "@/lib/constants";
+import type { PackageId } from "@/lib/constants";
 
 interface PRDState {
   // Package selection
-  packageType: PackageType | null;
-  setPackageType: (pkg: PackageType) => void;
+  packageType: PackageId | null;
+  setPackageType: (pkg: PackageId) => void;
 
   // Payment
   paymentStatus: "pending" | "paid" | "failed" | null;

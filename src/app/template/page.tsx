@@ -85,7 +85,7 @@ export default function TemplatePage() {
       <div className="mx-auto max-w-3xl px-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-[#6a7180] dark:text-gray-400 hover:text-[#1c2332] dark:hover:text-gray-100 mb-8 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Kembali
@@ -96,7 +96,7 @@ export default function TemplatePage() {
             <h1 className="text-3xl font-bold tracking-tight">
               Template PRD
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-[#6a7180] dark:text-gray-400 mt-1">
               Template PRD kosong yang bisa kamu download dan isi manual
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function TemplatePage() {
           </Button>
         </div>
 
-        <Card>
+        <Card className="animate-fade-in-up">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -114,8 +114,8 @@ export default function TemplatePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-xl bg-gray-50 dark:bg-gray-900 p-6 overflow-auto max-h-[60vh]">
-              <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
+            <div className="rounded-xl bg-[#f3f5f6] dark:bg-[#2a3040] p-6 overflow-auto max-h-[60vh]">
+              <pre className="text-sm text-[#6a7180] dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
                 {templateContent}
               </pre>
             </div>
@@ -123,7 +123,7 @@ export default function TemplatePage() {
         </Card>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-[#6a7180] dark:text-gray-400 mb-4">
             Mau bikin PRD lebih cepat? Cukup jawab pertanyaan, PRD langsung
             jadi!
           </p>

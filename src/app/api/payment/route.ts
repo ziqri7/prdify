@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { PRICING, getDbPackageType } from "@/lib/constants";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /** Gateway configuration — enable whichever gateway(s) you use */
 const GATEWAYS = {
@@ -103,7 +105,7 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
     success_return_url: `${appUrl}/questionnaire?payment=success`,
     cancel_return_url: `${appUrl}/payment?status=failed`,
     notification_url: `${appUrl}/api/payment`,
-    description: `BuatPakeAI - ${pkg === "pro" ? "Pro" : "Basic"} Package`,
+    description: `BuatPakeAI - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} Package`,
   };
 
   const baseUrl =
@@ -165,7 +167,7 @@ async function createDokuInvoice(pkg: string, amount: number, paymentMethod: str
     billing_address: {},
     line_items: [
       {
-        name: `BuatPakeAI - ${pkg === "pro" ? "Pro" : "Basic"} PRD`,
+        name: `BuatPakeAI - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} PRD`,
         quantity: 1,
         price: amount,
       },
@@ -226,10 +228,10 @@ async function createIpaymuInvoice(pkg: string, amount: number, paymentMethod: s
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
 
   const body = new URLSearchParams();
-  body.append("product", `BuatPakeAI ${pkg === "pro" ? "Pro" : "Basic"}`);
+  body.append("product", `BuatPakeAI ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"}`);
   body.append("qty", "1");
   body.append("price", amount.toString());
-  body.append("description", `PRD - ${pkg === "pro" ? "Pro" : "Basic"} Package`);
+  body.append("description", `PRD - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} Package`);
   body.append("returnUrl", `${appUrl}/questionnaire?payment=success`);
   body.append("cancelUrl", `${appUrl}/payment?status=failed`);
   body.append("notifyUrl", `${appUrl}/api/payment`);
@@ -306,18 +308,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const amounts: Record<string, number> = {
-      basic: 25000,
-      pro: 50000,
-    };
-
-    const amount = amounts[pkg as string];
-    if (!amount) {
+    const dbPackageType = getDbPackageType(pkg as any);
+    const pricingConfig = PRICING[pkg as keyof typeof PRICING];
+    if (!pricingConfig) {
       return NextResponse.json(
         { error: "Package tidak valid" },
         { status: 400 }
       );
     }
+    const amount = pricingConfig.price;
 
     // Coba gateway aktif secara berurutan, urut berdasarkan preferensi
     const gateways = getActiveGateways();
@@ -334,6 +333,20 @@ export async function POST(request: Request) {
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         gateway: "mock",
       };
+
+      // Simpan record payment ke database
+      try {
+        await supabaseAdmin.from('payments').insert({
+          external_id: invoice.external_id,
+          package_type: dbPackageType,
+          amount,
+          payment_method: paymentMethod,
+          status: 'PENDING',
+          gateway: 'mock',
+        });
+      } catch (e) {
+        console.error('Failed to save payment:', e);
+      }
 
       return NextResponse.json({
         success: true,
@@ -368,6 +381,22 @@ export async function POST(request: Request) {
             result = await createIpaymuInvoice(pkg, amount, paymentMethod);
             break;
         }
+        // Simpan record payment ke database
+        if (typeof result.external_id !== 'undefined') {
+          try {
+            await supabaseAdmin.from('payments').insert({
+              external_id: result.external_id,
+              package_type: dbPackageType,
+              amount,
+              payment_method: paymentMethod,
+              status: 'PENDING',
+              gateway: result.gateway || null,
+            });
+          } catch (e) {
+            console.error('Failed to save payment:', e);
+          }
+        }
+
         return NextResponse.json({ success: true, data: result });
       } catch (err) {
         console.error(`${gw} error:`, err);
@@ -400,11 +429,32 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id, external_id, status, paid_amount, gateway } = body;
 
-    // Log payment status
-    console.log(`Payment ${external_id || id} via ${gateway || "unknown"}: ${status}`);
+    // Cari payment by external_id
+    const { data: payment } = await supabaseAdmin
+      .from('payments')
+      .select('id, prd_id')
+      .eq('external_id', external_id)
+      .single();
 
-    // Di production: update status di database Supabase
-    // await supabase.from('payments').update({ status, paid_amount }).eq('external_id', external_id);
+    if (payment) {
+      // Update payment status
+      await supabaseAdmin
+        .from('payments')
+        .update({
+          status,
+          paid_at: status === 'PAID' ? new Date().toISOString() : null,
+          gateway: gateway || null,
+        })
+        .eq('external_id', external_id);
+
+      // If paid, unlock the PRD
+      if (status === 'PAID' && payment.prd_id) {
+        await supabaseAdmin
+          .from('prd_documents')
+          .update({ is_paid: true, payment_id: payment.id })
+          .eq('id', payment.prd_id);
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePRDStore } from "@/store/use-prd-store";
 import { questions } from "@/lib/questions";
-import { generatePRD, type PRDAnswers } from "@/lib/prd-generator";
+import type { PRDAnswers } from "@/lib/prd-generator";
 import { QuestionStep } from "@/components/prd/question-step";
 import { Button } from "@/components/ui/button";
 import { FileText, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
@@ -22,6 +22,7 @@ export default function QuestionnairePage() {
     setGeneratedPRD,
     setDocumentId,
     generatedPRD,
+    documentId,
     packageType,
     resetAnswers,
   } = usePRDStore();
@@ -36,40 +37,58 @@ export default function QuestionnairePage() {
     }
   }, [packageType, router]);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
-    // Simulate processing time
-    setTimeout(() => {
-      const fullAnswers = answers as PRDAnswers;
-      const result = generatePRD(fullAnswers);
-      setGeneratedPRD(result.fullMarkdown);
-      setDocumentId(crypto.randomUUID());
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: usePRDStore.getState().answers,
+          packageType: packageType,
+        }),
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setGeneratedPRD(result.data.markdown);
+        setDocumentId(result.data.id);
+        setIsDone(true);
+      } else {
+        throw new Error(result.error || "Gagal generate PRD");
+      }
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Terjadi kesalahan saat generate PRD"
+      );
+    } finally {
       setIsGenerating(false);
-      setIsDone(true);
-    }, 1500);
-  }, [answers, setGeneratedPRD, setDocumentId]);
+    }
+  }, [packageType, setGeneratedPRD, setDocumentId]);
 
   // If generation is done, show result
   if (isDone && generatedPRD) {
     return (
       <div className="min-h-[calc(100vh-4rem)] py-12">
         <div className="mx-auto max-w-2xl px-4 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6">
-            <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#059669]/10 dark:bg-[#059669]/20 mb-6 animate-scale-in">
+            <CheckCircle2 className="h-10 w-10 text-[#059669] dark:text-[#059669]" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-3xl font-bold tracking-tight mb-2 animate-fade-in-up">
             PRD Berhasil Dibuat!
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
+          <p className="text-[#6a7180] dark:text-gray-400 mb-8">
             PRD untuk{" "}
-            <span className="font-semibold text-gray-900 dark:text-gray-200">
+            <span className="font-semibold text-[#1c2332] dark:text-gray-200">
               {answers.product_name as string}
             </span>{" "}
             sudah siap. Kamu bisa lihat preview atau langsung download.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href={`/preview/demo`}>
+            <Link href={`/preview/${usePRDStore.getState().documentId}`}>
               <Button size="lg" className="gap-2 w-full sm:w-auto">
                 <FileText className="h-5 w-5" />
                 Lihat Preview
@@ -89,8 +108,8 @@ export default function QuestionnairePage() {
 
           {/* Quick preview of the PRD */}
           <div className="mt-12 text-left">
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 sm:p-8 overflow-auto max-h-96">
-              <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
+            <div className="rounded-2xl border border-[#dcdee1] dark:border-gray-800 bg-white dark:bg-[#2a3040] p-6 sm:p-8 overflow-auto max-h-96">
+              <pre className="text-sm text-[#6a7180] dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
                 {generatedPRD}
               </pre>
             </div>
@@ -105,14 +124,14 @@ export default function QuestionnairePage() {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30 mb-6">
-            <Loader2 className="h-8 w-8 text-violet-600 animate-spin" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f3f5f6] dark:bg-[#df5c37]/10 mb-6">
+            <Loader2 className="h-8 w-8 text-[#df5c37] animate-spin" />
           </div>
           <h2 className="text-xl font-semibold mb-2">Menghasilkan PRD...</h2>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-[#6a7180] dark:text-gray-400">
             Sistem sedang mengolah jawabanmu menjadi dokumen PRD profesional
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-violet-600 dark:text-violet-400">
+          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#df5c37] dark:text-[#df5c37]">
             <Sparkles className="h-4 w-4" />
             <span>Menganalisis jawaban...</span>
           </div>
@@ -128,14 +147,14 @@ export default function QuestionnairePage() {
       <div className="mx-auto max-w-4xl px-4">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/50 px-4 py-1.5 text-sm font-medium text-violet-700 dark:text-violet-300 mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#fffbeb] dark:border-[#d97706]/30 bg-[#fffbeb] dark:bg-[#d97706]/10 px-4 py-1.5 text-sm font-medium text-[#d97706] dark:text-[#fbbf24] mb-4">
             <FileText className="h-4 w-4" />
             Paket {packageType === "pro" ? "Pro" : "Basic"}
           </div>
           <h1 className="text-3xl font-bold tracking-tight">
             Jawab Pertanyaan Berikut
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-[#6a7180] dark:text-gray-400">
             Jawab sebisamu, nanti bisa diedit lagi setelah PRD jadi
           </p>
         </div>

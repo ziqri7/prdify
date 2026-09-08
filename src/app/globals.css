@@ -5,8 +5,38 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-primary: #7c3aed;
+
+  /* Primary — warm terracotta (persis ngodingpakeai.com) */
+  --color-primary: #df5c37;
   --color-primary-foreground: #ffffff;
+  --color-primary-dark: #c94d2a;
+
+  /* Ekstended palette — persis referensi */
+  --color-discount: #059669;
+  --color-discount-bg: #ecfdf5;
+  --color-discount-border: #a7f3d0;
+
+  /* Accent untuk pill PROMO — amber/emas hangat */
+  --color-accent: #d97706;
+  --color-accent-bg: #fffbeb;
+  --color-accent-border: #fde68a;
+
+  /* Surface */
+  --color-surface: #e7eaec;
+  --color-surface-subtle: #f3f5f6;
+  --color-card-border: #dcdee1;
+
+  /* Text */
+  --color-text-secondary: #6a7180;
+  --color-text-tertiary: #9ca3af;
+
+  /* CTA gradient */
+  --color-cta-from: #df5c37;
+  --color-cta-to: #d97706;
+
+  /* Dark mode */
+  --color-card-bg-dark: #2a3040;
+  --color-card-border-dark: #3a4155;
 }
 
 :root {
@@ -16,7 +46,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1c2332;
     --foreground: #ededed;
   }
 }
@@ -45,16 +75,61 @@ body {
   background: #374151;
 }
 
-/* Animation for pulse */
+/* Animation utilities */
 @keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
-
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out both;
+}
+
+/* Discount badge base */
+.discount-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  background-color: var(--color-discount-bg);
+  color: var(--color-discount);
+  border: 1px solid var(--color-discount-border);
+}
+
+/* Billing toggle base */
+.billing-toggle {
+  display: inline-flex;
+  border-radius: 9999px;
+  border: 1px solid var(--color-card-border);
+  background-color: white;
+  padding: 0.25rem;
+}
+
+.dark .billing-toggle {
+  background-color: var(--color-card-bg-dark);
+  border-color: var(--color-card-border-dark);
+}
+
+/* Section transition */
+.section-fade-in {
+  animation: fade-in-up 0.5s ease-out both;
 }
