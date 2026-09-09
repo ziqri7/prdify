@@ -1,5 +1,6 @@
 import { createAIPrd } from "@/lib/ai/deepinfra";
 import { PRD_SECTION_DEFINITIONS } from "@/lib/ai/prd-schema";
+import type { PackageId } from "@/lib/constants";
 
 export interface PRDAnswers {
   product_name: string;
@@ -177,8 +178,11 @@ ${sections.map((s) => `## ${s.title}\n\n${s.content}`).join("\n\n---\n\n")}
 }
 
 /** Generate a paid, AI-authored PRD while keeping the public document format stable. */
-export async function generateAIEnhancedPRD(answers: PRDAnswers): Promise<PRDResult> {
-  const aiDocument = await createAIPrd(answers);
+export async function generateAIEnhancedPRD(
+  answers: PRDAnswers,
+  planId: PackageId
+): Promise<PRDResult> {
+  const aiDocument = await createAIPrd(answers, planId);
   const date = formatDate();
   const cleanTitle = aiDocument.title.replace(/^PRD\s*:\s*/i, "").trim();
   const title = `PRD: ${cleanTitle}`;

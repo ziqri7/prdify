@@ -3,9 +3,11 @@ import "server-only";
 import { buildPRDMessages } from "./prd-prompt";
 import { parseAIPrdDocument, type AIPrdDocument } from "./prd-schema";
 import type { PRDAnswers } from "@/lib/prd-generator";
+import type { PackageId } from "@/lib/constants";
 
 const DEEPINFRA_URL = "https://api.deepinfra.com/v1/openai/chat/completions";
 const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731";
+const DEFAULT_PRO_MODEL = "openai/gpt-oss-120b";
 
 export class AIProviderError extends Error {
   constructor(
@@ -23,7 +25,24 @@ function getTimeoutMs(): number {
   return Math.min(Math.max(configured, 10000), 90000);
 }
 
-export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
+/**
+ * Model selection belongs exclusively on the server. Pay Per Use follows the
+ * Starter tier so a client can never request the higher-cost Pro model.
+ */
+function getModelForPlan(planId: PackageId): string {
+  if (planId === "pro" || planId === "pro_tahunan") {
+    return process.env.DEEPINFRA_PRO_MODEL?.trim() || DEFAULT_PRO_MODEL;
+  }
+
+  return process.env.DEEPINFRA_STARTER_MODEL?.trim()
+    || process.env.DEEPINFRA_MODEL?.trim()
+    || DEFAULT_MODEL;
+}
+
+export async function createAIPrd(
+  answers: PRDAnswers,
+  planId: PackageId
+): Promise<AIPrdDocument> {
   const apiKey = process.env.DEEPINFRA_API_KEY?.trim();
   if (!apiKey) {
     throw new AIProviderError(
@@ -43,7 +62,7 @@ export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.DEEPINFRA_MODEL?.trim() || DEFAULT_MODEL,
+        model: getModelForPlan(planId),
         messages: buildPRDMessages(answers),
         temperature: 0.35,
         max_tokens: 3000,

@@ -19,6 +19,7 @@ export const PRICING = {
     description: "1 kredit PRD AI, cocok untuk yang jarang bikin",
     features: [
       "1 kredit untuk membuat PRD AI",
+      "PRD dibuat dengan DeepSeek Flash",
       "Kredit dipakai setelah PRD berhasil dibuat",
       "Akses penuh & download .md",
       "Semua template & format",
@@ -36,6 +37,7 @@ export const PRICING = {
     discountLabel: "12% OFF",
     features: [
       "5 PRD per bulan",
+      "PRD dibuat dengan DeepSeek Flash",
       "Akses penuh & download .md",
       "Preview terbatas sebelum bayar",
       "Semua template & format",
@@ -54,6 +56,7 @@ export const PRICING = {
     discountLabel: "34% OFF",
     features: [
       "Unlimited PRD",
+      "PRD premium dengan GPT-OSS 120B",
       "Chat AI untuk brainstorming",
       "Akses penuh & download .md, PDF, DOCX",
       "Edit PRD setelah jadi",
@@ -76,6 +79,7 @@ export const PRICING = {
     discountBadge: "Paling Worth",
     features: [
       "Semua fitur Pro",
+      "PRD premium dengan GPT-OSS 120B",
       "Hanya Rp 99rb/bln (Rp 1.188.000/thn)",
       "Hemat 51% dibanding bulanan",
       "Akses prioritas fitur baru",

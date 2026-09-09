@@ -71,7 +71,10 @@ export async function POST(request: Request) {
     }
 
     try {
-      const result = await generateAIEnhancedPRD(answers as PRDAnswers);
+      const result = await generateAIEnhancedPRD(
+        answers as PRDAnswers,
+        entitlement.planId
+      );
 
       // The database trigger finalizes the reservation only if this insert
       // succeeds, so a failed insert cannot consume a credit or quota.
