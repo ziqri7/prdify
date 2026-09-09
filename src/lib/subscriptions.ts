@@ -8,6 +8,12 @@ export type SubscriptionEntitlement = {
   packageType: "basic" | "pro";
 };
 
+export type GenerationEntitlement = {
+  reservationId: string;
+  planId: PackageId;
+  packageType: "basic" | "pro";
+};
+
 function isSubscriptionPlan(planId: PackageId): planId is SubscriptionPlan {
   return planId !== "pay_per_use";
 }
@@ -25,6 +31,52 @@ export async function consumeSubscriptionQuota(userId: string): Promise<Subscrip
     planId: entitlement.plan_id as SubscriptionPlan,
     packageType: entitlement.package_type as "basic" | "pro",
   };
+}
+
+/**
+ * Reserves exactly one paid generation source. The database chooses an active
+ * subscription first and otherwise an available Pay Per Use credit. A caller
+ * must release the reservation if generation or persistence fails.
+ */
+export async function reserveGenerationAccess(userId: string): Promise<GenerationEntitlement | null> {
+  const { data, error } = await supabaseAdmin.rpc("reserve_generation_access", {
+    p_user_id: userId,
+  });
+  if (error) throw error;
+
+  const entitlement = data?.[0];
+  if (!entitlement) return null;
+
+  return {
+    reservationId: entitlement.reservation_id as string,
+    planId: entitlement.plan_id as PackageId,
+    packageType: entitlement.package_type as "basic" | "pro",
+  };
+}
+
+export async function releaseGenerationReservation(reservationId: string, userId: string) {
+  const { error } = await supabaseAdmin.rpc("release_generation_reservation", {
+    p_reservation_id: reservationId,
+    p_user_id: userId,
+  });
+  if (error) throw error;
+}
+
+/** Adds one Pay Per Use credit exactly once because payment_id is unique. */
+export async function grantPrepaidCreditForPayment({
+  userId,
+  paymentId,
+}: {
+  userId: string;
+  paymentId: string;
+}) {
+  const { error } = await supabaseAdmin
+    .from("prepaid_credits")
+    .upsert(
+      { user_id: userId, payment_id: paymentId, status: "available" },
+      { onConflict: "payment_id", ignoreDuplicates: true }
+    );
+  if (error) throw error;
 }
 
 export async function activateSubscriptionForPayment({
@@ -58,7 +110,8 @@ export async function activateSubscriptionForPayment({
     status: "active",
     current_period_start: now.toISOString(),
     current_period_end: periodEnd.toISOString(),
-    documents_used: 1,
+    // A subscription is now purchased before the first AI generation.
+    documents_used: 0,
     document_limit: documentLimit,
     payment_id: paymentId,
   };

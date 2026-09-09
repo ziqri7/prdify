@@ -4,8 +4,7 @@ export const APP_DESCRIPTION =
   "BuatPakeAI membantu kamu membuat Product Requirements Document (PRD) yang rapi dan profesional — cukup jawab pertanyaan-pertanyaan sederhana, dan sistem akan menghasilkan PRD untukmu secara instan.";
 
 // Pricing model: kombinasi pay-per-use + subscription
-// Free: generate PRD, preview terbatas (blur/watermark)
-// Pay-per-use: Rp 25rb/PRD — akses penuh 1 dokumen
+// Pay-per-use: Rp 25rb untuk 1 kredit PRD AI
 // Starter: Rp 66k/bln — 5 PRD/bln, akses penuh
 // Pro: Rp 133k/bln — Unlimited PRD + Chat AI
 // Pro Tahunan: Rp 99k/bln (Rp 1.1jt/thn) — Unlimited PRD + Chat AI, termurah
@@ -17,11 +16,11 @@ export const PRICING = {
     price: 25000,
     priceLabel: "Rp 25.000",
     perLabel: "/dokumen",
-    description: "Bayar per PRD, cocok untuk yang jarang bikin",
+    description: "1 kredit PRD AI, cocok untuk yang jarang bikin",
     features: [
-      "Generate 1 PRD",
+      "1 kredit untuk membuat PRD AI",
+      "Kredit dipakai setelah PRD berhasil dibuat",
       "Akses penuh & download .md",
-      "Preview terbatas sebelum bayar",
       "Semua template & format",
     ],
     cta: "Buat PRD & Bayar",

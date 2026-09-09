@@ -63,7 +63,7 @@ function PaymentContent() {
   const paymentMethods = [{ id: "qris", label: "QRIS", icon: Smartphone }];
 
   const handlePay = async () => {
-    if (!selectedMethod || !normalizedPackage || !prdId) return;
+    if (!selectedMethod || !normalizedPackage) return;
     setPaymentStatus("pending");
     setLoading(true);
     setError(null);
@@ -75,7 +75,7 @@ function PaymentContent() {
         body: JSON.stringify({
           package: normalizedPackage,
           paymentMethod: selectedMethod,
-          prdId,
+          ...(prdId ? { prdId } : {}),
         }),
       });
       const result = await res.json();
@@ -110,24 +110,6 @@ function PaymentContent() {
     );
   }
 
-  if (!prdId) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-        <Card className="max-w-md text-center">
-          <CardHeader>
-            <CardTitle>Buat PRD terlebih dahulu</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-[#6a7180] dark:text-gray-400">
-              Pembayaran harus ditautkan ke PRD yang akan dibuka akses penuhnya.
-            </p>
-            <Button onClick={() => router.push("/questionnaire")}>Mulai membuat PRD</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-[calc(100vh-4rem)] py-12">
       <div className="mx-auto max-w-2xl px-4">
@@ -142,8 +124,8 @@ function PaymentContent() {
         <h1 className="text-3xl font-bold tracking-tight mb-2">
           Pembayaran
         </h1>
-        <p className="text-[#6a7180] dark:text-gray-400 mb-8">
-          Selesaikan pembayaran untuk mulai membuat PRD
+          <p className="text-[#6a7180] dark:text-gray-400 mb-8">
+          Selesaikan pembayaran. Setelah webhook terkonfirmasi, kamu bisa mulai membuat PRD dengan AI.
         </p>
 
         <div className="grid gap-6">
@@ -233,7 +215,7 @@ function PaymentContent() {
           </Button>
 
           <p className="text-center text-xs text-[#6a7180] dark:text-gray-500">
-              Pembayaran diproses aman melalui QRIS SumoPod.
+              Pembayaran diproses aman melalui QRIS SumoPod. Akses aktif setelah pembayaran terverifikasi.
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { PRDAnswers } from "@/lib/prd-generator";
 import type { PackageId } from "@/lib/constants";
 
@@ -32,7 +33,7 @@ interface PRDState {
   setDocumentId: (id: string) => void;
 }
 
-export const usePRDStore = create<PRDState>((set) => ({
+export const usePRDStore = create<PRDState>()(persist((set) => ({
   // Package
   packageType: null,
   setPackageType: (pkg) => set({ packageType: pkg }),
@@ -67,4 +68,13 @@ export const usePRDStore = create<PRDState>((set) => ({
   setGeneratedPRD: (prd) => set({ generatedPRD: prd }),
   documentId: null,
   setDocumentId: (id) => set({ documentId: id }),
+}), {
+  name: "buatpakeai-questionnaire-v1",
+  // This is convenience state only. The server still checks the paid
+  // subscription/credit for every generation request.
+  partialize: (state) => ({
+    packageType: state.packageType,
+    currentStep: state.currentStep,
+    answers: state.answers,
+  }),
 }));

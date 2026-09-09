@@ -14,7 +14,6 @@ export default function QuestionnairePage() {
   const router = useRouter();
   const {
     currentStep,
-    setCurrentStep,
     nextStep,
     prevStep,
     answers,
@@ -22,20 +21,37 @@ export default function QuestionnairePage() {
     setGeneratedPRD,
     setDocumentId,
     generatedPRD,
-    documentId,
     packageType,
+    setPackageType,
     resetAnswers,
   } = usePRDStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
-  // Redirect if no package selected
+  // The server is the source of truth for a paid subscription or prepaid
+  // credit. Browser state only keeps the questionnaire draft convenient.
   useEffect(() => {
-    if (!packageType) {
-      router.push("/pricing");
-    }
-  }, [packageType, router]);
+    let active = true;
+    const loadEntitlement = async () => {
+      try {
+        const response = await fetch("/api/entitlement");
+        const result = await response.json();
+        if (!response.ok || !result.data?.planId) {
+          router.replace("/pricing");
+          return;
+        }
+        if (active) setPackageType(result.data.planId);
+      } catch {
+        router.replace("/pricing");
+      } finally {
+        if (active) setIsCheckingAccess(false);
+      }
+    };
+    void loadEntitlement();
+    return () => { active = false; };
+  }, [router, setPackageType]);
 
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
@@ -45,7 +61,6 @@ export default function QuestionnairePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           answers: usePRDStore.getState().answers,
-          packageType: packageType,
         }),
       });
       const result = await response.json();
@@ -66,7 +81,7 @@ export default function QuestionnairePage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [packageType, setGeneratedPRD, setDocumentId]);
+  }, [setGeneratedPRD, setDocumentId]);
 
   // If generation is done, show result
   if (isDone && generatedPRD) {
@@ -140,7 +155,13 @@ export default function QuestionnairePage() {
     );
   }
 
-  if (!packageType) return null;
+  if (isCheckingAccess || !packageType) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#df5c37]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-12">
@@ -149,7 +170,7 @@ export default function QuestionnairePage() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#fffbeb] dark:border-[#d97706]/30 bg-[#fffbeb] dark:bg-[#d97706]/10 px-4 py-1.5 text-sm font-medium text-[#d97706] dark:text-[#fbbf24] mb-4">
             <FileText className="h-4 w-4" />
-            Paket {packageType === "pro" ? "Pro" : "Basic"}
+            Paket {packageType === "pay_per_use" ? "Pay Per Use" : packageType === "starter" ? "Starter" : packageType === "pro_tahunan" ? "Pro Tahunan" : "Pro"}
           </div>
           <h1 className="text-3xl font-bold tracking-tight">
             Jawab Pertanyaan Berikut

@@ -132,6 +132,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON public.payments(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_one_open_payment_per_prd
   ON public.payments(prd_id)
   WHERE prd_id IS NOT NULL AND status IN ('PENDING', 'PAID');
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_one_pending_plan_per_user
+  ON public.payments(user_id, plan_id)
+  WHERE prd_id IS NULL AND status = 'PENDING';
 
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
@@ -205,6 +208,308 @@ BEGIN
 END;
 $$;
 
+-- 3c. KREDIT PRABAYAR & RESERVASI GENERASI
+-- Pay Per Use memberikan satu kredit setelah webhook pembayaran tervalidasi.
+-- Kredit dan kuota langganan selalu direservasi di database sebelum generator
+-- dipanggil, sehingga klik ganda tidak dapat memakai akses yang sama dua kali.
+CREATE TABLE IF NOT EXISTS public.prepaid_credits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  payment_id UUID NOT NULL UNIQUE REFERENCES public.payments(id) ON DELETE RESTRICT,
+  status TEXT NOT NULL DEFAULT 'available'
+    CHECK (status IN ('available', 'reserved', 'consumed')),
+  reserved_at TIMESTAMPTZ,
+  consumed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_prepaid_credits_available
+  ON public.prepaid_credits(user_id, created_at)
+  WHERE status = 'available';
+
+ALTER TABLE public.prepaid_credits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "User dapat melihat kredit sendiri"
+  ON public.prepaid_credits FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS public.generation_reservations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('subscription', 'prepaid_credit')),
+  package_type TEXT NOT NULL CHECK (package_type IN ('basic', 'pro')),
+  plan_id TEXT NOT NULL CHECK (plan_id IN ('pay_per_use', 'starter', 'pro', 'pro_tahunan')),
+  subscription_id UUID REFERENCES public.subscriptions(id) ON DELETE RESTRICT,
+  credit_id UUID REFERENCES public.prepaid_credits(id) ON DELETE RESTRICT,
+  status TEXT NOT NULL DEFAULT 'reserved'
+    CHECK (status IN ('reserved', 'finalized', 'released')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  finalized_at TIMESTAMPTZ,
+  released_at TIMESTAMPTZ,
+  CONSTRAINT generation_reservations_source_integrity CHECK (
+    (source = 'subscription' AND subscription_id IS NOT NULL AND credit_id IS NULL)
+    OR (source = 'prepaid_credit' AND credit_id IS NOT NULL AND subscription_id IS NULL)
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_generation_reservations_user_status
+  ON public.generation_reservations(user_id, status);
+
+ALTER TABLE public.generation_reservations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "User dapat melihat reservasi sendiri"
+  ON public.generation_reservations FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Link a document to the reservation that paid for its generation. The trigger
+-- below finalizes the reservation in the same transaction as document insert.
+ALTER TABLE public.prd_documents
+  ADD COLUMN IF NOT EXISTS generation_reservation_id UUID
+  REFERENCES public.generation_reservations(id) ON DELETE SET NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prd_generation_reservation
+  ON public.prd_documents(generation_reservation_id)
+  WHERE generation_reservation_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.reserve_generation_access(p_user_id UUID)
+RETURNS TABLE(reservation_id UUID, plan_id TEXT, package_type TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  active_subscription public.subscriptions%ROWTYPE;
+  available_credit public.prepaid_credits%ROWTYPE;
+  new_reservation UUID := gen_random_uuid();
+BEGIN
+  -- Prefer an active subscription, then fall back to a one-off paid credit.
+  SELECT s.* INTO active_subscription
+  FROM public.subscriptions AS s
+  WHERE s.user_id = p_user_id
+    AND s.status = 'active'
+    AND s.current_period_end > NOW()
+    AND (s.document_limit IS NULL OR s.documents_used < s.document_limit)
+  ORDER BY s.current_period_end DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF FOUND THEN
+    UPDATE public.subscriptions
+    SET documents_used = documents_used + 1
+    WHERE id = active_subscription.id;
+
+    INSERT INTO public.generation_reservations (
+      id, user_id, source, package_type, plan_id, subscription_id
+    ) VALUES (
+      new_reservation,
+      p_user_id,
+      'subscription',
+      CASE WHEN active_subscription.plan_id IN ('pro', 'pro_tahunan') THEN 'pro' ELSE 'basic' END,
+      active_subscription.plan_id,
+      active_subscription.id
+    );
+
+    RETURN QUERY SELECT new_reservation, active_subscription.plan_id,
+      CASE WHEN active_subscription.plan_id IN ('pro', 'pro_tahunan') THEN 'pro' ELSE 'basic' END;
+    RETURN;
+  END IF;
+
+  SELECT c.* INTO available_credit
+  FROM public.prepaid_credits AS c
+  WHERE c.user_id = p_user_id AND c.status = 'available'
+  ORDER BY c.created_at
+  LIMIT 1
+  FOR UPDATE SKIP LOCKED;
+
+  IF FOUND THEN
+    UPDATE public.prepaid_credits
+    SET status = 'reserved', reserved_at = NOW()
+    WHERE id = available_credit.id;
+
+    INSERT INTO public.generation_reservations (
+      id, user_id, source, package_type, plan_id, credit_id
+    ) VALUES (
+      new_reservation, p_user_id, 'prepaid_credit', 'basic', 'pay_per_use', available_credit.id
+    );
+
+    RETURN QUERY SELECT new_reservation, 'pay_per_use'::TEXT, 'basic'::TEXT;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.release_generation_reservation(
+  p_reservation_id UUID,
+  p_user_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  reservation public.generation_reservations%ROWTYPE;
+BEGIN
+  SELECT * INTO reservation
+  FROM public.generation_reservations
+  WHERE id = p_reservation_id AND user_id = p_user_id AND status = 'reserved'
+  FOR UPDATE;
+  IF NOT FOUND THEN RETURN FALSE; END IF;
+
+  IF reservation.source = 'subscription' THEN
+    UPDATE public.subscriptions
+    SET documents_used = GREATEST(documents_used - 1, 0)
+    WHERE id = reservation.subscription_id;
+  ELSE
+    UPDATE public.prepaid_credits
+    SET status = 'available', reserved_at = NULL
+    WHERE id = reservation.credit_id AND status = 'reserved';
+  END IF;
+
+  UPDATE public.generation_reservations
+  SET status = 'released', released_at = NOW()
+  WHERE id = reservation.id;
+  RETURN TRUE;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.finalize_generation_reservation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  reservation public.generation_reservations%ROWTYPE;
+BEGIN
+  IF NEW.generation_reservation_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT * INTO reservation
+  FROM public.generation_reservations
+  WHERE id = NEW.generation_reservation_id
+    AND user_id = NEW.user_id
+    AND status = 'reserved'
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Generation reservation is invalid or no longer available';
+  END IF;
+
+  IF reservation.source = 'prepaid_credit' THEN
+    UPDATE public.prepaid_credits
+    SET status = 'consumed', consumed_at = NOW()
+    WHERE id = reservation.credit_id AND status = 'reserved';
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Prepaid credit is no longer reserved';
+    END IF;
+  END IF;
+
+  UPDATE public.generation_reservations
+  SET status = 'finalized', finalized_at = NOW()
+  WHERE id = reservation.id;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS finalize_generation_reservation_on_document ON public.prd_documents;
+CREATE TRIGGER finalize_generation_reservation_on_document
+  BEFORE INSERT ON public.prd_documents
+  FOR EACH ROW EXECUTE FUNCTION public.finalize_generation_reservation();
+
+-- Applies a verified gateway notification and grants its entitlement in one
+-- transaction. Retried webhooks are idempotent: a PAID payment stays PAID and
+-- never grants a second credit or subscription period.
+CREATE OR REPLACE FUNCTION public.settle_verified_payment(
+  p_external_id TEXT,
+  p_gateway TEXT,
+  p_amount INTEGER,
+  p_status TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  payment_row public.payments%ROWTYPE;
+  current_subscription UUID;
+  period_end TIMESTAMPTZ;
+  document_limit_value INTEGER;
+BEGIN
+  SELECT * INTO payment_row
+  FROM public.payments
+  WHERE external_id = p_external_id
+  FOR UPDATE;
+
+  IF NOT FOUND
+    OR payment_row.gateway IS DISTINCT FROM p_gateway
+    OR payment_row.amount <> p_amount THEN
+    RETURN FALSE;
+  END IF;
+
+  IF payment_row.status = 'PAID' THEN
+    RETURN TRUE;
+  END IF;
+  IF payment_row.status <> 'PENDING' THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.payments
+  SET status = p_status,
+      paid_at = CASE WHEN p_status = 'PAID' THEN NOW() ELSE NULL END
+  WHERE id = payment_row.id;
+
+  IF p_status <> 'PAID' THEN
+    RETURN TRUE;
+  END IF;
+
+  IF payment_row.prd_id IS NOT NULL THEN
+    UPDATE public.prd_documents
+    SET is_paid = TRUE, payment_id = payment_row.id::TEXT
+    WHERE id = payment_row.prd_id;
+  END IF;
+
+  IF payment_row.plan_id = 'pay_per_use' AND payment_row.prd_id IS NULL THEN
+    INSERT INTO public.prepaid_credits (user_id, payment_id, status)
+    VALUES (payment_row.user_id, payment_row.id, 'available')
+    ON CONFLICT (payment_id) DO NOTHING;
+    RETURN TRUE;
+  END IF;
+
+  IF payment_row.plan_id IN ('starter', 'pro', 'pro_tahunan') THEN
+    period_end := NOW() + CASE
+      WHEN payment_row.plan_id = 'pro_tahunan' THEN INTERVAL '1 year'
+      ELSE INTERVAL '1 month'
+    END;
+    document_limit_value := CASE WHEN payment_row.plan_id = 'starter' THEN 5 ELSE NULL END;
+
+    SELECT id INTO current_subscription
+    FROM public.subscriptions
+    WHERE user_id = payment_row.user_id AND status = 'active'
+    FOR UPDATE;
+
+    IF FOUND THEN
+      UPDATE public.subscriptions
+      SET plan_id = payment_row.plan_id,
+          current_period_start = NOW(),
+          current_period_end = period_end,
+          documents_used = 0,
+          document_limit = document_limit_value,
+          payment_id = payment_row.id
+      WHERE id = current_subscription;
+    ELSE
+      INSERT INTO public.subscriptions (
+        user_id, plan_id, status, current_period_start, current_period_end,
+        documents_used, document_limit, payment_id
+      ) VALUES (
+        payment_row.user_id, payment_row.plan_id, 'active', NOW(), period_end,
+        0, document_limit_value, payment_row.id
+      );
+    END IF;
+  END IF;
+
+  RETURN TRUE;
+END;
+$$;
+
 
 -- 4. FUNGSI & TRIGGER: Update updated_at otomatis
 CREATE OR REPLACE FUNCTION public.update_updated_at()
@@ -232,6 +537,11 @@ CREATE TRIGGER set_subscriptions_updated_at
   BEFORE UPDATE ON public.subscriptions
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
+DROP TRIGGER IF EXISTS set_prepaid_credits_updated_at ON public.prepaid_credits;
+CREATE TRIGGER set_prepaid_credits_updated_at
+  BEFORE UPDATE ON public.prepaid_credits
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
 
 -- 5. STATS VIEW (untuk dashboard)
 CREATE OR REPLACE VIEW public.user_stats AS
@@ -251,6 +561,10 @@ GROUP BY p.id;
 -- tidak diperlukan dan berisiko memberi akses penuh ke client anonim.
 DROP POLICY IF EXISTS "Service role dapat akses semua" ON public.prd_documents;
 DROP POLICY IF EXISTS "Service role dapat akses semua payments" ON public.payments;
+-- Dokumen dan pembayaran baru dibuat hanya melalui API server; policy INSERT
+-- yang longgar would allow a browser client to forge rows outside those flows.
+DROP POLICY IF EXISTS "User dapat membuat PRD" ON public.prd_documents;
+DROP POLICY IF EXISTS "System dapat membuat pembayaran" ON public.payments;
 
 
 -- ============================================================

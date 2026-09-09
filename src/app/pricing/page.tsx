@@ -248,11 +248,11 @@ export default function PricingPage() {
           <div className="space-y-6">
             <div>
               <h3 className="font-semibold mb-1">
-                Bisa preview PRD sebelum bayar?
+                Bagaimana cara mencoba BuatPakeAI?
               </h3>
               <p className="text-sm text-[#6a7180] dark:text-gray-400">
-                Tentu! Kamu bisa generate PRD gratis, lihat preview section
-                pertama. Kalau puas, baru bayar untuk akses penuh dan download.
+                Pilih Pay Per Use untuk membeli satu kredit pembuatan PRD AI.
+                Kredit dipakai hanya setelah PRD berhasil dibuat.
               </p>
             </div>
             <div>
@@ -260,9 +260,8 @@ export default function PricingPage() {
                 Bedanya Pay Per Use sama langganan?
               </h3>
               <p className="text-sm text-[#6a7180] dark:text-gray-400">
-                Pay Per Use: bayar Rp 25rb per PRD — cocok untuk yang jarang
-                bikin PRD. Langganan Starter/Pro: lebih murah per PRD-nya,
-                cocok untuk yang rutin bikin PRD.
+                Pay Per Use memberi satu kredit prabayar — cocok untuk yang jarang
+                membuat PRD. Starter/Pro memberi kuota langganan untuk penggunaan rutin.
               </p>
             </div>
             <div>

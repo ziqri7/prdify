@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { generatePRD, type PRDAnswers } from "@/lib/prd-generator";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getDbPackageType } from "@/lib/constants";
 import { getAuthenticatedUser } from "@/lib/server-auth";
-import { consumeSubscriptionQuota } from "@/lib/subscriptions";
+import {
+  releaseGenerationReservation,
+  reserveGenerationAccess,
+} from "@/lib/subscriptions";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { answers, packageType } = body;
+    const { answers } = body;
 
-    if (!answers || !packageType) {
+    if (!answers) {
       return NextResponse.json(
-        { error: "Answers dan packageType wajib diisi" },
+        { error: "Jawaban kuesioner wajib diisi" },
         { status: 400 }
       );
     }
@@ -55,49 +57,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Silakan masuk terlebih dahulu" }, { status: 401 });
     }
 
-    // Generate PRD
-    const result = generatePRD(answers as PRDAnswers);
-    const dbPackageType = getDbPackageType(packageType);
-    // A paid subscription grants immediate access and consumes one quota only
-    // when a document is actually generated. First-time subscribers can still
-    // preview a draft and activate their plan at checkout.
-    const subscription = packageType === "pay_per_use"
-      ? null
-      : await consumeSubscriptionQuota(user.id);
-
-    // Save to Supabase
-    const { data: document, error: dbError } = await supabaseAdmin
-      .from("prd_documents")
-      .insert({
-        user_id: user.id,
-        title: result.title,
-        package_type: subscription?.packageType || dbPackageType,
-        answers: answers,
-        markdown_content: result.fullMarkdown,
-        status: "active",
-        is_paid: Boolean(subscription),
-      })
-      .select("id")
-      .single();
-
-    if (dbError) {
-      console.error("Database error:", dbError);
+    // The database, not a client-controlled package value, decides whether
+    // this user has an active subscription or one prepaid credit to spend.
+    // The reservation is released in the catch block unless document insert
+    // atomically finalizes it through the database trigger.
+    const entitlement = await reserveGenerationAccess(user.id);
+    if (!entitlement) {
       return NextResponse.json(
-        { error: "Gagal menyimpan PRD ke database" },
-        { status: 500 }
+        { error: "Kamu memerlukan paket aktif atau 1 kredit Pay Per Use untuk membuat PRD dengan AI" },
+        { status: 402 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: document.id,
-        title: result.title,
-        date: result.date,
-        markdown: result.fullMarkdown,
-        sections: result.sections,
-      },
-    });
+    try {
+      // This is replaced by the DeepInfra generator in the next task. Keeping
+      // the reservation lifecycle here already protects the future AI cost.
+      const result = generatePRD(answers as PRDAnswers);
+
+      // The database trigger finalizes the reservation only if this insert
+      // succeeds, so a failed insert cannot consume a credit or quota.
+      const { data: document, error: dbError } = await supabaseAdmin
+        .from("prd_documents")
+        .insert({
+          user_id: user.id,
+          title: result.title,
+          package_type: entitlement.packageType,
+          answers: answers,
+          markdown_content: result.fullMarkdown,
+          status: "active",
+          is_paid: true,
+          generation_reservation_id: entitlement.reservationId,
+        })
+        .select("id")
+        .single();
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw new Error("Gagal menyimpan PRD ke database");
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: document.id,
+          title: result.title,
+          date: result.date,
+          markdown: result.fullMarkdown,
+          sections: result.sections,
+        },
+      });
+    } catch (error) {
+      try {
+        await releaseGenerationReservation(entitlement.reservationId, user.id);
+      } catch (releaseError) {
+        console.error("Reservation release error:", releaseError);
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Generate error:", error);
     return NextResponse.json(

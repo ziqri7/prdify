@@ -1,6 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { activateSubscriptionForPayment } from "@/lib/subscriptions";
 
 type VerifiedPayment = {
   externalId: string;
@@ -128,49 +127,12 @@ export function verifyDevelopmentMockWebhook(request: Request, rawBody: string):
 
 /** Applies only a verified gateway notification and never trusts its supplied PRD id. */
 export async function applyVerifiedPayment(notification: VerifiedPayment) {
-  const { data: payment, error } = await supabaseAdmin
-    .from("payments")
-    .select("id, user_id, prd_id, plan_id, amount, status, gateway")
-    .eq("external_id", notification.externalId)
-    .maybeSingle();
-
+  const { data, error } = await supabaseAdmin.rpc("settle_verified_payment", {
+    p_external_id: notification.externalId,
+    p_gateway: notification.gateway,
+    p_amount: notification.amount,
+    p_status: notification.status,
+  });
   if (error) throw error;
-  if (!payment || payment.gateway !== notification.gateway || payment.amount !== notification.amount) {
-    return false;
-  }
-
-  // A successful payment is final. Do not permit later notifications to revoke access.
-  if (payment.status === "PAID") return true;
-
-  const { data: updated, error: updateError } = await supabaseAdmin
-    .from("payments")
-    .update({
-      status: notification.status,
-      paid_at: notification.status === "PAID" ? new Date().toISOString() : null,
-    })
-    .eq("id", payment.id)
-    .eq("status", "PENDING")
-    .select("id, prd_id")
-    .maybeSingle();
-
-  if (updateError) throw updateError;
-  if (!updated) return false;
-
-  if (notification.status === "PAID" && updated.prd_id) {
-    const { error: documentError } = await supabaseAdmin
-      .from("prd_documents")
-      .update({ is_paid: true, payment_id: updated.id })
-      .eq("id", updated.prd_id);
-    if (documentError) throw documentError;
-  }
-
-  if (notification.status === "PAID" && payment.user_id) {
-    await activateSubscriptionForPayment({
-      userId: payment.user_id,
-      paymentId: payment.id,
-      planId: payment.plan_id,
-    });
-  }
-
-  return true;
+  return data === true;
 }

@@ -29,6 +29,16 @@ export interface Database {
         Insert: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<Subscription, 'id'>>
       }
+      prepaid_credits: {
+        Row: PrepaidCredit
+        Insert: Omit<PrepaidCredit, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<PrepaidCredit, 'id'>>
+      }
+      generation_reservations: {
+        Row: GenerationReservation
+        Insert: Omit<GenerationReservation, 'id' | 'created_at'>
+        Update: Partial<Omit<GenerationReservation, 'id'>>
+      }
     }
     Views: {
       user_stats: {
@@ -68,6 +78,7 @@ export interface PRDDocument {
   status: PRDDocumentStatus
   is_paid: boolean
   payment_id: string | null
+  generation_reservation_id: string | null
   session_id: string | null
   created_at: string
   updated_at: string
@@ -109,6 +120,35 @@ export interface Subscription {
   payment_id: string | null
   created_at: string
   updated_at: string
+}
+
+// ── Pay Per Use credits & generation reservations ──
+export type PrepaidCreditStatus = 'available' | 'reserved' | 'consumed'
+export interface PrepaidCredit {
+  id: string
+  user_id: string
+  payment_id: string
+  status: PrepaidCreditStatus
+  reserved_at: string | null
+  consumed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type GenerationSource = 'subscription' | 'prepaid_credit'
+export type GenerationReservationStatus = 'reserved' | 'finalized' | 'released'
+export interface GenerationReservation {
+  id: string
+  user_id: string
+  source: GenerationSource
+  package_type: PackageType
+  plan_id: PackageId
+  subscription_id: string | null
+  credit_id: string | null
+  status: GenerationReservationStatus
+  created_at: string
+  finalized_at: string | null
+  released_at: string | null
 }
 
 // ── Views ──
