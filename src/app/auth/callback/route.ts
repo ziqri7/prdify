@@ -22,12 +22,12 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            // Set ke request agar Supabase bisa baca
-            request.cookies.set(name, value)
-            // Set ke response agar browser menyimpan cookie session
-            response.cookies.set(name, value, options)
-          })
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Set ke request agar Supabase bisa baca
+              request.cookies.set(name, value)
+              // Set ke response agar browser menyimpan cookie session
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -37,6 +37,15 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return response
     }
+
+    // Safe diagnostic only: helps distinguish a missing PKCE verifier from a
+    // provider-side exchange failure without logging authorization codes or cookies.
+    console.warn('OAuth callback exchange failed', {
+      message: error.message,
+      hasPkceVerifier: request.cookies
+        .getAll()
+        .some(({ name }) => name.endsWith('-code-verifier')),
+    })
   }
 
   return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_failed`)
