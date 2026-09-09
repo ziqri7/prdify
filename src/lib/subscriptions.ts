@@ -14,6 +14,11 @@ export type GenerationEntitlement = {
   packageType: "basic" | "pro";
 };
 
+export type GenerationAccessDenied = {
+  denied: true;
+  reason: "generation_in_progress" | "fair_use_limit" | "no_access";
+};
+
 function isSubscriptionPlan(planId: PackageId): planId is SubscriptionPlan {
   return planId !== "pay_per_use";
 }
@@ -38,14 +43,24 @@ export async function consumeSubscriptionQuota(userId: string): Promise<Subscrip
  * subscription first and otherwise an available Pay Per Use credit. A caller
  * must release the reservation if generation or persistence fails.
  */
-export async function reserveGenerationAccess(userId: string): Promise<GenerationEntitlement | null> {
+export async function reserveGenerationAccess(
+  userId: string
+): Promise<GenerationEntitlement | GenerationAccessDenied> {
   const { data, error } = await supabaseAdmin.rpc("reserve_generation_access", {
     p_user_id: userId,
   });
   if (error) throw error;
 
   const entitlement = data?.[0];
-  if (!entitlement) return null;
+  if (!entitlement?.reservation_id) {
+    const reason = entitlement?.denial_reason;
+    return {
+      denied: true,
+      reason: reason === "generation_in_progress" || reason === "fair_use_limit"
+        ? reason
+        : "no_access",
+    };
+  }
 
   return {
     reservationId: entitlement.reservation_id as string,

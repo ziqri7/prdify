@@ -269,8 +269,60 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_prd_generation_reservation
   ON public.prd_documents(generation_reservation_id)
   WHERE generation_reservation_id IS NOT NULL;
 
+-- Releases reservations abandoned by an interrupted server request. This also
+-- restores the subscription counter or prepaid credit before a user can retry.
+CREATE OR REPLACE FUNCTION public.release_stale_generation_reservations(
+  p_user_id UUID,
+  p_max_age INTERVAL DEFAULT INTERVAL '15 minutes'
+)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  reservation public.generation_reservations%ROWTYPE;
+  released_count INTEGER := 0;
+BEGIN
+  FOR reservation IN
+    SELECT * FROM public.generation_reservations
+    WHERE user_id = p_user_id
+      AND status = 'reserved'
+      AND created_at < NOW() - p_max_age
+    FOR UPDATE
+  LOOP
+    IF reservation.source = 'subscription' THEN
+      UPDATE public.subscriptions
+      SET documents_used = GREATEST(documents_used - 1, 0)
+      WHERE id = reservation.subscription_id;
+    ELSE
+      UPDATE public.prepaid_credits
+      SET status = 'available', reserved_at = NULL
+      WHERE id = reservation.credit_id AND status = 'reserved';
+    END IF;
+
+    UPDATE public.generation_reservations
+    SET status = 'released', released_at = NOW()
+    WHERE id = reservation.id;
+    released_count := released_count + 1;
+  END LOOP;
+
+  RETURN released_count;
+END;
+$$;
+
+-- A user may have only one active AI generation. Pro remains unmetered by
+-- month, but fair use protects capacity with a rolling hourly ceiling.
+-- The return shape includes a denial reason in this version, so remove the
+-- preceding function signature before recreating it on an existing project.
+DROP FUNCTION IF EXISTS public.reserve_generation_access(UUID);
 CREATE OR REPLACE FUNCTION public.reserve_generation_access(p_user_id UUID)
-RETURNS TABLE(reservation_id UUID, plan_id TEXT, package_type TEXT)
+RETURNS TABLE(
+  reservation_id UUID,
+  plan_id TEXT,
+  package_type TEXT,
+  denial_reason TEXT
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -279,7 +331,21 @@ DECLARE
   active_subscription public.subscriptions%ROWTYPE;
   available_credit public.prepaid_credits%ROWTYPE;
   new_reservation UUID := gen_random_uuid();
+  pro_generations_last_hour INTEGER;
 BEGIN
+  -- Serializes all reservation attempts for one user, so double clicks and
+  -- parallel browser tabs cannot reserve more than one generation at once.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::TEXT, 0));
+  PERFORM public.release_stale_generation_reservations(p_user_id);
+
+  IF EXISTS (
+    SELECT 1 FROM public.generation_reservations
+    WHERE user_id = p_user_id AND status = 'reserved'
+  ) THEN
+    RETURN QUERY SELECT NULL::UUID, NULL::TEXT, NULL::TEXT, 'generation_in_progress'::TEXT;
+    RETURN;
+  END IF;
+
   -- Prefer an active subscription, then fall back to a one-off paid credit.
   SELECT s.* INTO active_subscription
   FROM public.subscriptions AS s
@@ -292,6 +358,20 @@ BEGIN
   FOR UPDATE;
 
   IF FOUND THEN
+    IF active_subscription.plan_id IN ('pro', 'pro_tahunan') THEN
+      SELECT COUNT(*) INTO pro_generations_last_hour
+      FROM public.generation_reservations
+      WHERE user_id = p_user_id
+        AND plan_id IN ('pro', 'pro_tahunan')
+        AND status = 'finalized'
+        AND finalized_at >= NOW() - INTERVAL '1 hour';
+
+      IF pro_generations_last_hour >= 10 THEN
+        RETURN QUERY SELECT NULL::UUID, NULL::TEXT, NULL::TEXT, 'fair_use_limit'::TEXT;
+        RETURN;
+      END IF;
+    END IF;
+
     UPDATE public.subscriptions
     SET documents_used = documents_used + 1
     WHERE id = active_subscription.id;
@@ -308,7 +388,8 @@ BEGIN
     );
 
     RETURN QUERY SELECT new_reservation, active_subscription.plan_id,
-      CASE WHEN active_subscription.plan_id IN ('pro', 'pro_tahunan') THEN 'pro' ELSE 'basic' END;
+      CASE WHEN active_subscription.plan_id IN ('pro', 'pro_tahunan') THEN 'pro' ELSE 'basic' END,
+      NULL::TEXT;
     RETURN;
   END IF;
 
@@ -330,8 +411,11 @@ BEGIN
       new_reservation, p_user_id, 'prepaid_credit', 'basic', 'pay_per_use', available_credit.id
     );
 
-    RETURN QUERY SELECT new_reservation, 'pay_per_use'::TEXT, 'basic'::TEXT;
+    RETURN QUERY SELECT new_reservation, 'pay_per_use'::TEXT, 'basic'::TEXT, NULL::TEXT;
+    RETURN;
   END IF;
+
+  RETURN QUERY SELECT NULL::UUID, NULL::TEXT, NULL::TEXT, 'no_access'::TEXT;
 END;
 $$;
 
@@ -509,6 +593,19 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
+
+-- These routines are server-only. The public browser roles must not be able
+-- to reserve other users' quota or mark a payment as settled through RPC.
+REVOKE ALL ON FUNCTION public.consume_subscription_quota(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.reserve_generation_access(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.release_generation_reservation(UUID, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.release_stale_generation_reservations(UUID, INTERVAL) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.settle_verified_payment(TEXT, TEXT, INTEGER, TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.consume_subscription_quota(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.reserve_generation_access(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.release_generation_reservation(UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.release_stale_generation_reservations(UUID, INTERVAL) TO service_role;
+GRANT EXECUTE ON FUNCTION public.settle_verified_payment(TEXT, TEXT, INTEGER, TEXT) TO service_role;
 
 
 -- 4. FUNGSI & TRIGGER: Update updated_at otomatis

@@ -57,6 +57,7 @@ export const PRICING = {
     features: [
       "PRD tanpa batas kuota bulanan",
       "PRD premium dengan GPT-OSS 120B",
+      "Penggunaan wajar: maksimal 10 PRD per jam",
       "Chat AI untuk brainstorming",
       "Akses penuh & download .md, PDF, DOCX",
       "Edit PRD setelah jadi",
@@ -80,6 +81,7 @@ export const PRICING = {
     features: [
       "Semua fitur Pro",
       "PRD premium dengan GPT-OSS 120B",
+      "Penggunaan wajar: maksimal 10 PRD per jam",
       "Hanya Rp 99rb/bln (Rp 1.188.000/thn)",
       "Hemat 51% dibanding bulanan",
       "Akses prioritas fitur baru",

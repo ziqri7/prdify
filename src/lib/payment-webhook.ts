@@ -67,6 +67,17 @@ export function verifySumopodWebhook(request: Request, rawBody: string): Verifie
   const svixSignature = request.headers.get("svix-signature");
   if (!secret || !svixId || !svixTimestamp || !svixSignature) return null;
 
+  // Svix timestamps are UNIX seconds. A valid signature alone is not enough:
+  // reject old deliveries so a captured request cannot be replayed later.
+  const timestampSeconds = Number(svixTimestamp);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (
+    !Number.isSafeInteger(timestampSeconds) ||
+    Math.abs(nowSeconds - timestampSeconds) > 5 * 60
+  ) {
+    return null;
+  }
+
   let secretBytes: Buffer;
   try {
     secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");

@@ -63,7 +63,19 @@ export async function POST(request: Request) {
     // The reservation is released in the catch block unless document insert
     // atomically finalizes it through the database trigger.
     const entitlement = await reserveGenerationAccess(user.id);
-    if (!entitlement) {
+    if ("denied" in entitlement) {
+      if (entitlement.reason === "generation_in_progress") {
+        return NextResponse.json(
+          { error: "PRD lain masih sedang dibuat. Tunggu sampai proses selesai sebelum membuat PRD berikutnya." },
+          { status: 409, headers: { "Retry-After": "60" } }
+        );
+      }
+      if (entitlement.reason === "fair_use_limit") {
+        return NextResponse.json(
+          { error: "Batas penggunaan wajar Pro tercapai. Coba lagi dalam satu jam." },
+          { status: 429, headers: { "Retry-After": "3600" } }
+        );
+      }
       return NextResponse.json(
         { error: "Kamu memerlukan paket aktif atau 1 kredit Pay Per Use untuk membuat PRD dengan AI" },
         { status: 402 }
