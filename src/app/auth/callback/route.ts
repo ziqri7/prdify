@@ -22,12 +22,12 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => {
-              // Set ke request agar Supabase bisa baca
-              request.cookies.set(name, value)
-              // Set ke response agar browser menyimpan cookie session
-              response.cookies.set(name, value)
-            })
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Set ke request agar Supabase bisa baca
+            request.cookies.set(name, value)
+            // Set ke response agar browser menyimpan cookie session
+            response.cookies.set(name, value, options)
+          })
           },
         },
       }
