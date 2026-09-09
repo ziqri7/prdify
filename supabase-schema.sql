@@ -172,13 +172,13 @@ AS $$
 BEGIN
   RETURN QUERY
   WITH eligible AS (
-    SELECT id, plan_id
-    FROM public.subscriptions
-    WHERE user_id = p_user_id
-      AND status = 'active'
-      AND current_period_end > NOW()
-      AND (document_limit IS NULL OR documents_used < document_limit)
-    ORDER BY current_period_end DESC
+    SELECT s.id, s.plan_id
+    FROM public.subscriptions AS s
+    WHERE s.user_id = p_user_id
+      AND s.status = 'active'
+      AND s.current_period_end > NOW()
+      AND (s.document_limit IS NULL OR s.documents_used < s.document_limit)
+    ORDER BY s.current_period_end DESC
     LIMIT 1
     FOR UPDATE
   ), consumed AS (
