@@ -1,3 +1,6 @@
+import { createAIPrd } from "@/lib/ai/deepinfra";
+import { PRD_SECTION_DEFINITIONS } from "@/lib/ai/prd-schema";
+
 export interface PRDAnswers {
   product_name: string;
   description: string;
@@ -162,7 +165,7 @@ ${sections.map((s) => `## ${s.title}\n\n${s.content}`).join("\n\n---\n\n")}
 
 ---
 
-*Dokumen ini dibuat secara otomatis oleh BuatPakeAI — generator PRD berbasis AI.*
+*Dokumen ini dibuat secara otomatis oleh BuatPakeAI.*
 `;
 
   return {
@@ -171,4 +174,32 @@ ${sections.map((s) => `## ${s.title}\n\n${s.content}`).join("\n\n---\n\n")}
     sections,
     fullMarkdown,
   };
+}
+
+/** Generate a paid, AI-authored PRD while keeping the public document format stable. */
+export async function generateAIEnhancedPRD(answers: PRDAnswers): Promise<PRDResult> {
+  const aiDocument = await createAIPrd(answers);
+  const date = formatDate();
+  const cleanTitle = aiDocument.title.replace(/^PRD\s*:\s*/i, "").trim();
+  const title = `PRD: ${cleanTitle}`;
+  const sections: PRDSection[] = PRD_SECTION_DEFINITIONS.map((definition, index) => ({
+    title: definition.title,
+    content: aiDocument.sections[index].content,
+  }));
+
+  const fullMarkdown = `# ${title}
+
+**Tanggal:** ${date}
+**Status:** Draft
+
+---
+
+${sections.map((section) => `## ${section.title}\n\n${section.content}`).join("\n\n---\n\n")}
+
+---
+
+*Dokumen ini dibuat dengan bantuan AI oleh BuatPakeAI. Tinjau dan sesuaikan sebelum digunakan.*
+`;
+
+  return { title, date, sections, fullMarkdown };
 }

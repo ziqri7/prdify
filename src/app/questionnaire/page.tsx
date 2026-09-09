@@ -142,13 +142,13 @@ export default function QuestionnairePage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f3f5f6] dark:bg-[#df5c37]/10 mb-6">
             <Loader2 className="h-8 w-8 text-[#df5c37] animate-spin" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Menghasilkan PRD...</h2>
+          <h2 className="text-xl font-semibold mb-2">AI sedang menyusun PRD...</h2>
           <p className="text-[#6a7180] dark:text-gray-400">
-            Sistem sedang mengolah jawabanmu menjadi dokumen PRD profesional
+            AI sedang menganalisis jawabanmu menjadi dokumen PRD profesional
           </p>
           <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#df5c37] dark:text-[#df5c37]">
             <Sparkles className="h-4 w-4" />
-            <span>Menganalisis jawaban...</span>
+            <span>Menyusun kebutuhan, prioritas, dan rencana MVP...</span>
           </div>
         </div>
       </div>

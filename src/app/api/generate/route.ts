@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { generatePRD, type PRDAnswers } from "@/lib/prd-generator";
+import { generateAIEnhancedPRD, type PRDAnswers } from "@/lib/prd-generator";
+import { AIProviderError } from "@/lib/ai/deepinfra";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getAuthenticatedUser } from "@/lib/server-auth";
 import {
@@ -70,9 +71,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      // This is replaced by the DeepInfra generator in the next task. Keeping
-      // the reservation lifecycle here already protects the future AI cost.
-      const result = generatePRD(answers as PRDAnswers);
+      const result = await generateAIEnhancedPRD(answers as PRDAnswers);
 
       // The database trigger finalizes the reservation only if this insert
       // succeeds, so a failed insert cannot consume a credit or quota.
@@ -115,6 +114,9 @@ export async function POST(request: Request) {
       throw error;
     }
   } catch (error) {
+    if (error instanceof AIProviderError) {
+      return NextResponse.json({ error: error.publicMessage }, { status: error.status });
+    }
     console.error("Generate error:", error);
     return NextResponse.json(
       { error: "Gagal menghasilkan PRD" },
