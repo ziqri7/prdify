@@ -6,7 +6,6 @@ import {
   MousePointerClick,
   Download,
   Sparkles,
-  CheckCircle2,
   ArrowRight,
   Users,
   GraduationCap,
@@ -17,28 +16,28 @@ import {
 
 const features = [
   {
-    icon: MousePointerClick,
-    title: "Jawab Pertanyaan",
+    icon: Lock,
+    title: "Masuk dengan Google",
     description:
-      "Cukup jawab 20 pertanyaan sederhana tentang produk yang ingin kamu buat.",
+      "Buat akun atau masuk dengan Google agar PRD dan riwayatmu tersimpan aman.",
   },
   {
     icon: Sparkles,
-    title: "Generate Gratis",
+    title: "Pilih Paket yang Sesuai",
     description:
-      "PRD langsung digenerate otomatis — lihat preview section pertama tanpa bayar.",
+      "Mulai dari satu kredit untuk satu ide, atau berlangganan untuk kebutuhan rutin.",
   },
   {
-    icon: Lock,
-    title: "Bayar untuk Buka Akses",
+    icon: MousePointerClick,
+    title: "Jawab Pertanyaan Produk",
     description:
-      "Puas dengan hasilnya? Pilih paket, bayar, dan dapatkan akses penuh + download.",
+      "Ceritakan masalah, pengguna, fitur, dan tujuan produkmu dalam panduan singkat.",
   },
   {
     icon: Download,
-    title: "Export & Download",
+    title: "Tinjau & Download",
     description:
-      "Download dalam format Markdown, PDF, atau DOCX sesuai kebutuhan.",
+      "Tinjau hasilnya, lalu download sesuai fitur paket yang kamu pilih.",
   },
 ];
 
@@ -66,23 +65,23 @@ const targetAudience = [
 const steps = [
   {
     num: "01",
-    title: "Buat PRD Gratis",
-    desc: "Masuk dengan Google, lalu jawab 20 pertanyaan secara gratis",
+    title: "Masuk dengan Google",
+    desc: "Buat akun agar PRD dan paketmu tersimpan di satu tempat",
   },
   {
     num: "02",
-    title: "Preview Dulu",
-    desc: "Lihat section pertama PRD-mu, pastikan sesuai ekspektasi",
+    title: "Pilih Paket",
+    desc: `Mulai ${PRICING.pay_per_use.priceLabel} untuk satu PRD atau berlangganan sesuai kebutuhan`,
   },
   {
     num: "03",
-    title: "Bayar & Buka",
-    desc: `Mulai ${PRICING.pay_per_use.priceLabel}, pilih paket & bayar untuk akses penuh`,
+    title: "Isi Brief Produk",
+    desc: "Jawab pertanyaan tentang ide, pengguna, masalah, fitur, dan tujuan produkmu",
   },
   {
     num: "04",
-    title: "Download & Edit",
-    desc: "Download .md, PDF, atau DOCX — edit kapan saja",
+    title: "Gunakan PRD-mu",
+    desc: "Tinjau, edit, lalu download PRD untuk dibawa ke developer atau AI coding tool",
   },
 ];
 
@@ -102,7 +101,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#fffbeb] dark:border-[#d97706]/30 bg-[#fffbeb] dark:bg-[#d97706]/10 px-4 py-1.5 text-sm font-medium text-[#d97706] dark:text-[#fbbf24]">
               <Sparkles className="h-4 w-4" />
-              Generator PRD Otomatis #1 di Indonesia
+              AI untuk merapikan ide produkmu
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -115,9 +114,9 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-[#6a7180] dark:text-gray-400 sm:text-xl">
-              {APP_NAME} membantu kamu membuat Product Requirements Document
-              (PRD) yang rapi dan profesional — generate <strong>gratis</strong>,
-              preview dulu, baru bayar kalau puas. Mulai dari{" "}
+              Ubah ide mentah menjadi Product Requirements Document (PRD) yang
+              rapi, terstruktur, dan siap dibangun. Masuk dengan Google, pilih
+              paket, lalu jawab pertanyaan produkmu. Mulai dari{" "}
               <span className="font-semibold text-[#1c2332] dark:text-gray-200">
                 {PRICING.pay_per_use.priceLabel}
               </span>{" "}
@@ -129,9 +128,9 @@ export default function HomePage() {
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link href="/questionnaire">
+              <Link href="/pricing">
                 <Button size="lg" className="w-full sm:w-auto text-base gap-2">
-                  Buat PRD Gratis
+                  Pilih Paket & Mulai
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -149,12 +148,12 @@ export default function HomePage() {
 
           {/* Quick Action Shortcuts */}
           <div className="mx-auto mt-14 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href="/questionnaire" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
+            <Link href="/pricing" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#df5c37]/10 p-2.5 text-[#df5c37]">
                 <FileText className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Buat PRD</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Isi questionnaire, generate PRD otomatis</p>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Mulai Buat PRD</h3>
+              <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Pilih paket sebelum mengisi brief produk</p>
             </Link>
             <Link href="/template" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#d97706]/10 p-2.5 text-[#d97706]">
@@ -179,26 +178,6 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="mx-auto mt-14 flex max-w-2xl items-center justify-center gap-10 sm:gap-14">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                </span>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">Live</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">39.9K</div>
-              <div className="text-sm text-[#6a7180] dark:text-gray-400">User</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">19.4K</div>
-              <div className="text-sm text-[#6a7180] dark:text-gray-400">PRD</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -210,7 +189,7 @@ export default function HomePage() {
               Cara Kerjanya
             </h2>
             <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400">
-              Hanya 4 langkah sederhana — gratis di awal!
+              Empat langkah sederhana dari ide sampai PRD siap digunakan.
             </p>
           </div>
 
@@ -272,7 +251,7 @@ export default function HomePage() {
               Kenapa {APP_NAME}?
             </h2>
             <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400">
-              Proses 4 langkah yang simpel — dari gratis sampai akses penuh
+              Struktur yang jelas agar ide produkmu siap dibangun
             </p>
           </div>
 
@@ -309,18 +288,17 @@ export default function HomePage() {
               Siap Bikin PRD-mu Sekarang?
             </h2>
             <p className="mt-4 text-lg text-[#fffbeb]/90 max-w-2xl mx-auto">
-              Generate PRD gratis — preview dulu, bayar kalau puas! Mulai dari{" "}
-              <strong>{PRICING.pay_per_use.priceLabel}</strong> per dokumen atau
-              cobain paket Starter cuma{" "}
+              Mulai dari <strong>{PRICING.pay_per_use.priceLabel}</strong> per dokumen atau
+              pilih paket Starter seharga{" "}
               <strong>{PRICING.starter.priceLabel}</strong>/bulan.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link href="/questionnaire">
+              <Link href="/pricing">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto text-base bg-white text-[#df5c37] hover:bg-[#f3f5f6] shadow-xl gap-2"
                 >
-                  Buat PRD Gratis
+                  Pilih Paket & Mulai
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>

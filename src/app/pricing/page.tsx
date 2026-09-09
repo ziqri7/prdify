@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PRICING } from "@/lib/constants";
 import { CheckCircle2, ArrowRight, Sparkles, Tag } from "lucide-react";
-import { useState } from "react";
 
 interface PlanDetail {
   id: string;
@@ -86,8 +85,6 @@ function formatOriginalPrice(price: number): string {
 }
 
 export default function PricingPage() {
-  const [billingPeriod, setBillingPeriod] = useState<"1bulan" | "3bulan">("1bulan");
-
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
@@ -105,8 +102,7 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400 max-w-2xl mx-auto">
-            Upgrade untuk AI premium dan fitur lebih. Bisa upgrade, downgrade,
-            atau cancel kapan aja.
+            Pilih paket sesuai intensitas kerja dan kedalaman PRD yang kamu butuhkan.
           </p>
           <div className="mt-6 mx-auto max-w-2xl rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-left text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100">
             <div className="flex items-start gap-2">
@@ -119,34 +115,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Billing Toggle */}
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <div className="billing-toggle">
-              <button
-                onClick={() => setBillingPeriod("1bulan")}
-                className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
-                  billingPeriod === "1bulan"
-                    ? "bg-[#df5c37] text-white shadow-sm"
-                    : "text-[#6a7180] dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                }`}
-              >
-                1 Bulan
-              </button>
-              <button
-                onClick={() => setBillingPeriod("3bulan")}
-                className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
-                  billingPeriod === "3bulan"
-                    ? "bg-[#df5c37] text-white shadow-sm"
-                    : "text-[#6a7180] dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                }`}
-              >
-                3 Bulan
-                {billingPeriod === "3bulan" && (
-                  <span className="ml-1.5 text-xs text-emerald-300">Hemat</span>
-                )}
-              </button>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -244,8 +212,7 @@ export default function PricingPage() {
 
         {/* Footer note */}
         <p className="mt-8 text-center text-xs text-[#6a7180] dark:text-gray-400">
-          Semua harga dalam Rupiah. Bisa upgrade, downgrade, atau cancel kapan
-          aja.
+          Semua harga dalam Rupiah. Akses paket aktif setelah pembayaran terverifikasi.
         </p>
       </section>
 

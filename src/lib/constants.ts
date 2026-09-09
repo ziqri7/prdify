@@ -1,7 +1,7 @@
 export const APP_NAME = "BuatPakeAI";
-export const APP_TAGLINE = "Bikin PRD Profesional, Cuma Jawab Pertanyaan!";
+export const APP_TAGLINE = "Dari Ide ke PRD Siap Dibangun dengan AI";
 export const APP_DESCRIPTION =
-  "BuatPakeAI membantu kamu membuat Product Requirements Document (PRD) yang rapi dan profesional — cukup jawab pertanyaan-pertanyaan sederhana, dan sistem akan menghasilkan PRD untukmu secara instan.";
+  "BuatPakeAI membantu kamu mengubah ide produk menjadi Product Requirements Document (PRD) yang rapi, terstruktur, dan siap ditinjau sebelum dibangun.";
 
 // Pricing model: kombinasi pay-per-use + subscription
 // Pay-per-use: Rp 25rb untuk 1 kredit PRD AI
@@ -39,7 +39,7 @@ export const PRICING = {
       "5 PRD per bulan",
       "PRD dibuat dengan DeepSeek Flash",
       "Akses penuh & download .md",
-      "Preview terbatas sebelum bayar",
+      "Panduan brief produk langkah demi langkah",
       "Semua template & format",
       "Riwayat PRD tersimpan",
     ],
@@ -52,10 +52,10 @@ export const PRICING = {
     originalPrice: 200000,
     priceLabel: "Rp 133.000",
     perLabel: "/bulan",
-    description: "Unlimited PRD + Chat AI, untuk power user",
+    description: "PRD tanpa batas kuota bulanan + Chat AI, untuk kebutuhan serius",
     discountLabel: "34% OFF",
     features: [
-      "Unlimited PRD",
+      "PRD tanpa batas kuota bulanan",
       "PRD premium dengan GPT-OSS 120B",
       "Chat AI untuk brainstorming",
       "Akses penuh & download .md, PDF, DOCX",
