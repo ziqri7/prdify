@@ -213,6 +213,73 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* PRD Outcome Preview */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#df5c37]/10 px-3 py-1.5 text-sm font-medium text-[#df5c37]">
+              <FileText className="h-4 w-4" />
+              Bukan sekadar rangkuman ide
+            </div>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              Dapatkan PRD yang memberi timmu arah untuk mulai membangun
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-[#6a7180] dark:text-gray-400">
+              BuatPakeAI menyusun jawabanmu menjadi dokumen yang lebih mudah dibaca,
+              ditinjau, dan diteruskan ke developer atau AI coding tool.
+            </p>
+            <ul className="mt-7 space-y-4">
+              {[
+                ["Kebutuhan yang terstruktur", "Masalah, pengguna, ruang lingkup MVP, fitur, dan alur pengguna dalam satu dokumen."],
+                ["Batasan yang jelas", "Asumsi dan pertanyaan terbuka ditandai agar tim tidak menganggapnya sebagai fakta."],
+                ["Siap menjadi brief implementasi", "Salin PRD atau brief implementasi untuk memulai diskusi teknis dan proses build."],
+              ].map(([title, description]) => (
+                <li key={title} className="flex gap-3">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                    <FileText className="h-3.5 w-3.5" />
+                  </div>
+                  <p className="text-sm leading-relaxed text-[#6a7180] dark:text-gray-400">
+                    <strong className="text-[#1c2332] dark:text-white">{title}.</strong>{" "}
+                    {description}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-[#df5c37]/15 to-[#d97706]/10 blur-2xl" />
+            <div className="overflow-hidden rounded-2xl border border-[#dcdee1] bg-white shadow-xl dark:border-gray-700 dark:bg-[#2a3040]">
+              <div className="flex items-center justify-between border-b border-[#dcdee1] bg-[#f8f9fa] px-5 py-3 dark:border-gray-700 dark:bg-[#1c2332]">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <FileText className="h-4 w-4 text-[#df5c37]" />
+                  Contoh struktur PRD
+                </div>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Siap ditinjau</span>
+              </div>
+              <div className="space-y-5 p-6 text-sm">
+                <div>
+                  <p className="font-bold text-[#1c2332] dark:text-white">PRD: Platform Reservasi Lapangan</p>
+                  <p className="mt-1 text-xs text-[#6a7180] dark:text-gray-400">Ringkasan produk, target pengguna, dan ruang lingkup MVP</p>
+                </div>
+                <div className="rounded-xl border border-[#dcdee1] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-[#1c2332]">
+                  <p className="font-semibold text-[#df5c37]">03. Masalah & Solusi</p>
+                  <p className="mt-2 leading-relaxed text-[#6a7180] dark:text-gray-400">Pengguna kesulitan melihat ketersediaan lapangan secara real-time. MVP memusatkan pencarian jadwal, reservasi, dan konfirmasi.</p>
+                </div>
+                <div className="rounded-xl border border-[#dcdee1] p-4 dark:border-gray-700">
+                  <p className="font-semibold text-[#df5c37]">04. Fitur MVP & Prioritas</p>
+                  <div className="mt-3 space-y-2 text-[#6a7180] dark:text-gray-400">
+                    <p><span className="mr-2 rounded bg-[#df5c37]/10 px-1.5 py-0.5 text-xs font-semibold text-[#df5c37]">P0</span> Pencarian jadwal dan reservasi</p>
+                    <p><span className="mr-2 rounded bg-[#d97706]/10 px-1.5 py-0.5 text-xs font-semibold text-[#d97706]">P1</span> Notifikasi konfirmasi</p>
+                  </div>
+                </div>
+                <p className="border-l-2 border-[#d97706] pl-3 text-xs italic leading-relaxed text-[#6a7180] dark:text-gray-400">Contoh ilustratif. Isi dokumen selalu dibuat berdasarkan jawaban yang kamu berikan.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Target Audience */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="text-center mb-14">

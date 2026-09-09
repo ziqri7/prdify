@@ -4,12 +4,11 @@ import { useParams } from "next/navigation";
 import { usePRDStore } from "@/store/use-prd-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Download,
   FileText,
   FileDown,
-  ExternalLink,
   ArrowLeft,
   Edit3,
   Copy,
@@ -17,6 +16,8 @@ import {
   Lock,
   Eye,
   Loader2,
+  Rocket,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -36,6 +37,7 @@ export default function PreviewPage() {
   const params = useParams();
   const packageType = usePRDStore((s) => s.packageType);
   const [copied, setCopied] = useState(false);
+  const [buildBriefCopied, setBuildBriefCopied] = useState(false);
   const [docData, setDocData] = useState<PRDDocumentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +71,13 @@ export default function PreviewPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const copyBuildBrief = () => {
+    if (!docData?.markdown_content) return;
+    navigator.clipboard.writeText(buildImplementationBrief(docData.title, docData.markdown_content));
+    setBuildBriefCopied(true);
+    setTimeout(() => setBuildBriefCopied(false), 2000);
   };
 
   const exportAsMarkdown = () => {
@@ -116,8 +125,9 @@ export default function PreviewPage() {
     }
   };
 
-  const currentPackageType: "basic" | "pro" =
-    (packageType as "basic" | "pro") || "basic";
+  // Always use persisted server data for feature access. Browser state may be
+  // stale, especially after a user returns to a Pro Tahunan document later.
+  const isProDocument = docData?.package_type === "pro";
 
   // Loading state
   if (loading) {
@@ -180,7 +190,7 @@ export default function PreviewPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {docData.is_paid && currentPackageType === "pro" && (
+            {docData.is_paid && isProDocument && (
               <Link href={`/edit/${params.id}`}>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Edit3 className="h-4 w-4" />
@@ -222,8 +232,8 @@ export default function PreviewPage() {
         </div>
 
         {/* Export options for Pro — only if paid */}
-        {docData.is_paid && currentPackageType === "pro" && (
-          <Card className="mb-8">
+        {docData.is_paid && isProDocument && (
+          <Card className="mb-8 border-violet-200 bg-violet-50/50 dark:border-violet-500/30 dark:bg-violet-500/5">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -236,22 +246,6 @@ export default function PreviewPage() {
                 <Button variant="secondary" size="sm" className="gap-2" onClick={() => exportAs("docx")}>
                   <FileDown className="h-4 w-4" />
                   DOCX
-                </Button>
-                <span className="text-xs text-gray-400 mx-2">|</span>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Integrasi:
-                </span>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Trello
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Notion
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Google Docs
                 </Button>
               </div>
             </CardContent>
@@ -316,13 +310,59 @@ export default function PreviewPage() {
           </div>
         ) : (
           /* Paid: full content */
-          <Card>
+          <Card className="border-[#dcdee1] shadow-sm dark:border-gray-800">
             <CardContent className="p-6 sm:p-10">
+              <div className="mb-8 flex flex-col gap-3 border-b border-[#dcdee1] pb-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#df5c37]">
+                    Dokumen lengkap
+                  </p>
+                  <p className="mt-1 text-sm text-[#6a7180] dark:text-gray-400">
+                    Siap ditinjau bersama tim atau dibawa ke proses development.
+                  </p>
+                </div>
+                {isProDocument && (
+                  <Badge className="w-fit border-0 bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200">
+                    <Sparkles className="mr-1 h-3.5 w-3.5" />
+                    Dokumen Pro
+                  </Badge>
+                )}
+              </div>
               <article className="prose prose-gray dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-violet-600">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {docData.markdown_content}
                 </ReactMarkdown>
               </article>
+            </CardContent>
+          </Card>
+        )}
+
+        {docData.is_paid && (
+          <Card className="mt-6 overflow-hidden border-[#df5c37]/30 bg-gradient-to-br from-[#fffbeb] to-white dark:from-[#df5c37]/10 dark:to-[#1c2332]">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+                <div className="max-w-2xl">
+                  <div className="flex items-center gap-2 text-[#df5c37]">
+                    <Rocket className="h-5 w-5" />
+                    <p className="text-sm font-semibold">Langkah selanjutnya</p>
+                  </div>
+                  <h2 className="mt-2 text-xl font-bold">Ubah PRD ini menjadi produk</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[#6a7180] dark:text-gray-400">
+                    Salin brief implementasi yang sudah menyertakan PRD ini, lalu tempel ke
+                    Cursor, Claude Code, Lovable, atau kirimkan ke developer. AI coding tool
+                    akan mendapat konteks produk sebelum mulai membuat kode.
+                  </p>
+                </div>
+                <Button className="shrink-0 gap-2" onClick={copyBuildBrief}>
+                  {buildBriefCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {buildBriefCopied ? "Brief tersalin" : "Salin brief implementasi"}
+                </Button>
+              </div>
+              <ol className="mt-6 grid gap-3 text-sm text-[#6a7180] dark:text-gray-400 sm:grid-cols-3">
+                <li className="rounded-lg border border-[#dcdee1] bg-white/70 p-3 dark:border-gray-700 dark:bg-[#1c2332]/60"><strong className="text-[#1c2332] dark:text-white">1. Salin brief</strong><br />Gunakan tombol di atas.</li>
+                <li className="rounded-lg border border-[#dcdee1] bg-white/70 p-3 dark:border-gray-700 dark:bg-[#1c2332]/60"><strong className="text-[#1c2332] dark:text-white">2. Tempel ke tool</strong><br />Pilih AI coding tool atau kirim ke developer.</li>
+                <li className="rounded-lg border border-[#dcdee1] bg-white/70 p-3 dark:border-gray-700 dark:bg-[#1c2332]/60"><strong className="text-[#1c2332] dark:text-white">3. Tinjau rencana</strong><br />Minta klarifikasi sebelum proses build dimulai.</li>
+              </ol>
             </CardContent>
           </Card>
         )}
@@ -336,7 +376,7 @@ export default function PreviewPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            {docData.is_paid && currentPackageType === "pro" && (
+            {docData.is_paid && isProDocument && (
               <Link href={`/edit/${params.id}`}>
                 <Button variant="outline" className="gap-2">
                   <Edit3 className="h-4 w-4" />
@@ -355,6 +395,19 @@ export default function PreviewPage() {
       </div>
     </div>
   );
+}
+
+function buildImplementationBrief(title: string, markdown: string): string {
+  return `Saya ingin membangun produk berdasarkan PRD berikut. Bertindaklah sebagai product engineer senior.
+
+1. Ringkas kebutuhan inti dan daftar pertanyaan yang benar-benar perlu dijawab sebelum mulai.
+2. Usulkan rencana MVP bertahap, termasuk urutan implementasi dan risiko teknis.
+3. Jangan mengarang detail yang tidak tertulis dalam PRD; tandai sebagai asumsi atau pertanyaan terbuka.
+4. Setelah saya menyetujui rencana, bantu implementasikan satu tahap demi satu tahap.
+
+# PRD: ${title}
+
+${markdown}`;
 }
 
 /**
