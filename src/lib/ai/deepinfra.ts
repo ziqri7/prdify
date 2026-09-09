@@ -46,7 +46,7 @@ export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
         model: process.env.DEEPINFRA_MODEL?.trim() || DEFAULT_MODEL,
         messages: buildPRDMessages(answers),
         temperature: 0.35,
-        max_tokens: 4200,
+        max_tokens: 3000,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
