@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="border-t border-[#dcdee1] dark:border-[#3a4155] bg-[#f3f5f6] dark:bg-[#1c2332]/50">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#df5c37] text-white">
@@ -54,8 +54,8 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {[
-                { href: "#", label: "FAQ" },
-                { href: "#", label: "Panduan" },
+                { href: "/pricing#faq", label: "FAQ Paket & Harga" },
+                { href: "/template", label: "Panduan lewat contoh PRD" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -69,26 +69,6 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Legal
-            </h3>
-            <ul className="space-y-2">
-              {[
-                { href: "#", label: "Kebijakan Privasi" },
-                { href: "#", label: "Syarat & Ketentuan" },
-              ].map((link) => (
-                <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#6a7180] dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
         <div className="mt-10 border-t border-[#dcdee1] dark:border-[#3a4155] pt-6 text-center">

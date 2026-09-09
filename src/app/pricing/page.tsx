@@ -217,7 +217,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Mini */}
-      <section className="border-t border-[#dcdee1] dark:border-[#3a4155] bg-[#f3f5f6] dark:bg-[#1c2332]/50 py-16">
+      <section id="faq" className="border-t border-[#dcdee1] dark:border-[#3a4155] bg-[#f3f5f6] dark:bg-[#1c2332]/50 py-16">
         <div className="mx-auto max-w-3xl px-4">
           <h2 className="text-2xl font-bold text-center mb-10">
             Pertanyaan Seputar Harga
