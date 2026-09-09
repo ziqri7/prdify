@@ -44,6 +44,17 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Backfill profiles for auth users created before the trigger was installed.
+INSERT INTO public.profiles (id, email, full_name, avatar_url)
+SELECT
+  u.id,
+  u.email,
+  COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', split_part(COALESCE(u.email, ''), '@', 1)),
+  COALESCE(u.raw_user_meta_data->>'avatar_url', u.raw_user_meta_data->>'picture')
+FROM auth.users AS u
+WHERE NOT EXISTS (SELECT 1 FROM public.profiles AS p WHERE p.id = u.id)
+ON CONFLICT (id) DO NOTHING;
+
 
 -- 2. TABEL PRD (dokumen yang dihasilkan)
 CREATE TABLE IF NOT EXISTS public.prd_documents (
