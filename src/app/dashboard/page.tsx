@@ -23,10 +23,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDocuments();
-  }, []);
-
   const loadDocuments = async () => {
     try {
       setLoading(true);
@@ -53,6 +49,10 @@ export default function DashboardPage() {
     }
   };
 
+  useEffect(() => {
+    void Promise.resolve().then(loadDocuments);
+  }, []);
+
   const handleDelete = async (id: string) => {
     if (!confirm("Hapus PRD ini? Tindakan ini tidak bisa dibatalkan.")) return;
     try {
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         .eq("id", id);
       if (error) throw error;
       setDocuments((prev) => prev.filter((d) => d.id !== id));
-    } catch (err) {
+    } catch {
       alert("Gagal menghapus PRD");
     }
   };

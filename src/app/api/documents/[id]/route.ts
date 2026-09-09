@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getAuthenticatedUser } from "@/lib/server-auth";
 
 export async function GET(
   request: Request,
@@ -7,12 +8,18 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Autentikasi diperlukan" }, { status: 401 });
+    }
 
     const { data: document, error } = await supabaseAdmin
       .from("prd_documents")
       .select("*")
       .eq("id", id)
-      .single();
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     if (error || !document) {
       return NextResponse.json(

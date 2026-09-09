@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { generatePRD, type PRDAnswers } from "@/lib/prd-generator";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getDbPackageType } from "@/lib/constants";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getAuthenticatedUser } from "@/lib/server-auth";
+import { consumeSubscriptionQuota } from "@/lib/subscriptions";
 
 export async function POST(request: Request) {
   try {
@@ -50,43 +50,32 @@ export async function POST(request: Request) {
       }
     }
 
-    // Get user if logged in
-    let userId: string | null = null;
-    try {
-      const cookieStore = await cookies();
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            getAll() {
-              return cookieStore.getAll();
-            },
-            setAll() {},
-          },
-        }
-      );
-      const { data: userData } = await supabase.auth.getUser();
-      userId = userData?.user?.id || null;
-    } catch {
-      // User not logged in — that's OK
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Silakan masuk terlebih dahulu" }, { status: 401 });
     }
 
     // Generate PRD
     const result = generatePRD(answers as PRDAnswers);
     const dbPackageType = getDbPackageType(packageType);
+    // A paid subscription grants immediate access and consumes one quota only
+    // when a document is actually generated. First-time subscribers can still
+    // preview a draft and activate their plan at checkout.
+    const subscription = packageType === "pay_per_use"
+      ? null
+      : await consumeSubscriptionQuota(user.id);
 
     // Save to Supabase
     const { data: document, error: dbError } = await supabaseAdmin
       .from("prd_documents")
       .insert({
-        user_id: userId,
+        user_id: user.id,
         title: result.title,
-        package_type: dbPackageType,
+        package_type: subscription?.packageType || dbPackageType,
         answers: answers,
         markdown_content: result.fullMarkdown,
         status: "active",
-        is_paid: false,
+        is_paid: Boolean(subscription),
       })
       .select("id")
       .single();

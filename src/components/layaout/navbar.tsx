@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { APP_NAME } from "@/lib/constants";
-import { FileText, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
-import { useState, useEffect } from "react";
+import { FileText, Menu, X, LogOut, LayoutDashboard, Sun, Moon } from "lucide-react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { useTheme } from "next-themes";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,12 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const { theme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -72,8 +78,9 @@ export function Navbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#df5c37] text-white shadow-lg shadow-[#df5c37]/20 transition-transform group-hover:scale-105">
             <FileText className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold text-[#df5c37]">
-            {APP_NAME}
+          <span className="text-xl font-bold tracking-tight">
+            <span className="text-gray-900 dark:text-white">BuatPake</span>
+            <span className="text-[#df5c37]">AI</span>
           </span>
         </Link>
 
@@ -93,6 +100,15 @@ export function Navbar() {
               )}
             </Link>
           ))}
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex items-center justify-center rounded-lg h-9 w-9 text-[#6a7180] dark:text-gray-400 hover:bg-[#f3f5f6] dark:hover:bg-[#2a3040] transition-colors"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+            </button>
+          )}
           <div className="flex items-center gap-3">
             {loading ? null : user ? (
               <>

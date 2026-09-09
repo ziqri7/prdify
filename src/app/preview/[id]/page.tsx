@@ -304,7 +304,7 @@ export default function PreviewPage() {
                     Bayar untuk mengakses seluruh konten PRD, download .md,
                     dan fitur eksklusif lainnya.
                   </p>
-                  <Link href={`/payment?package=${docData.package_type}&prd_id=${params.id}`}>
+                  <Link href={`/payment?package=${packageType || docData.package_type}&prd_id=${params.id}`}>
                     <Button size="lg" className="w-full gap-2">
                       <Eye className="h-5 w-5" />
                       Bayar untuk Akses Penuh

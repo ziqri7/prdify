@@ -39,8 +39,7 @@ async function generatePdfBuffer(
               paddingBottom: 5,
               borderBottom: "2 solid #1E40AF",
             },
-            children: line.replace(/^# /, ""),
-          })
+          }, line.replace(/^# /, ""))
         );
       } else if (line.startsWith("## ")) {
         pdfContent.push(
@@ -53,8 +52,7 @@ async function generatePdfBuffer(
               marginTop: 15,
               marginBottom: 8,
             },
-            children: line.replace(/^## /, ""),
-          })
+          }, line.replace(/^## /, ""))
         );
       } else if (line.startsWith("### ")) {
         pdfContent.push(
@@ -67,46 +65,39 @@ async function generatePdfBuffer(
               marginTop: 10,
               marginBottom: 5,
             },
-            children: line.replace(/^### /, ""),
-          })
+          }, line.replace(/^### /, ""))
         );
       } else if (line.startsWith("- ") || line.startsWith("* ")) {
         pdfContent.push(
           React.createElement(View, {
             key: `li-${i}`,
             style: { flexDirection: "row", marginLeft: 15, marginBottom: 3 },
-            children: [
+          }, [
               React.createElement(Text, {
                 key: `dot-${i}`,
                 style: { fontSize: 11, marginRight: 6 },
-                children: "•",
-              }),
+              }, "•"),
               React.createElement(Text, {
                 key: `text-${i}`,
                 style: { fontSize: 11, flex: 1, color: "#374151" },
-                children: line.replace(/^[-*] /, ""),
-              }),
-            ],
-          })
+              }, line.replace(/^[-*] /, "")),
+            ])
         );
       } else if (/^\d+\.\s/.test(line)) {
         pdfContent.push(
           React.createElement(View, {
             key: `nl-${i}`,
             style: { flexDirection: "row", marginLeft: 15, marginBottom: 3 },
-            children: [
+          }, [
               React.createElement(Text, {
                 key: `num-${i}`,
                 style: { fontSize: 11, marginRight: 6 },
-                children: `${line.match(/^\d+/)?.[0]}.`,
-              }),
+              }, `${line.match(/^\d+/)?.[0]}.`),
               React.createElement(Text, {
                 key: `text-${i}`,
                 style: { fontSize: 11, flex: 1, color: "#374151" },
-                children: line.replace(/^\d+\.\s/, ""),
-              }),
-            ],
-          })
+              }, line.replace(/^\d+\.\s/, "")),
+            ])
         );
       } else if (line.startsWith("**") && line.endsWith("**")) {
         pdfContent.push(
@@ -119,8 +110,7 @@ async function generatePdfBuffer(
               marginTop: 10,
               marginBottom: 5,
             },
-            children: line.replace(/\*\*/g, ""),
-          })
+          }, line.replace(/\*\*/g, ""))
         );
       } else if (line.startsWith("|") && !line.includes("---")) {
         const cells: string[] = line
@@ -140,7 +130,7 @@ async function generatePdfBuffer(
                 padding: isHeaderRow ? 4 : 2,
                 borderRadius: 2,
               },
-              children: cells.map((cell: string, ci: number) =>
+            }, cells.map((cell: string, ci: number) =>
                 React.createElement(Text, {
                   key: `cell-${i}-${ci}`,
                   style: {
@@ -150,10 +140,8 @@ async function generatePdfBuffer(
                     flex: 1,
                     paddingHorizontal: 4,
                   },
-                  children: cell,
-                })
-              ),
-            })
+                }, cell)
+              ))
           );
         }
       } else {
@@ -161,8 +149,7 @@ async function generatePdfBuffer(
           React.createElement(Text, {
             key: `p-${i}`,
             style: { fontSize: 11, marginBottom: 5, color: "#374151" },
-            children: line,
-          })
+          }, line)
         );
       }
     }
@@ -190,69 +177,85 @@ async function generatePdfBuffer(
               paddingBottom: 10,
             },
           },
-          React.createElement(Text, {
-            style: { fontSize: 9, color: "#9CA3AF" },
-            children: "BuatPakeAI — PRD Generator",
-          }),
-          React.createElement(Text, {
-            style: { fontSize: 9, color: "#9CA3AF" },
-            children: new Date().toLocaleDateString("id-ID"),
-          })
+          React.createElement(
+            Text,
+            { style: { fontSize: 9, color: "#9CA3AF" } },
+            "BuatPakeAI — PRD Generator"
+          ),
+          React.createElement(
+            Text,
+            { style: { fontSize: 9, color: "#9CA3AF" } },
+            new Date().toLocaleDateString("id-ID")
+          )
         ),
-        React.createElement(Text, {
-          style: {
+        React.createElement(
+          Text,
+          {
+            style: {
             fontSize: 24,
             fontWeight: 700,
             color: "#1E40AF",
             textAlign: "center",
             marginTop: 40,
             marginBottom: 10,
+            },
           },
-          children: docTitle,
-        }),
-        React.createElement(Text, {
-          style: {
+          docTitle
+        ),
+        React.createElement(
+          Text,
+          {
+            style: {
             fontSize: 14,
             color: "#6B7280",
             textAlign: "center",
             marginBottom: 8,
             fontStyle: "italic",
+            },
           },
-          children: "Product Requirements Document",
-        }),
-        React.createElement(Text, {
-          style: {
+          "Product Requirements Document"
+        ),
+        React.createElement(
+          Text,
+          {
+            style: {
             fontSize: 10,
             color: "#9CA3AF",
             textAlign: "center",
             marginBottom: 40,
+            },
           },
-          children: `Dibuat dengan BuatPakeAI — ${new Date().toLocaleDateString("id-ID", {
+          `Dibuat dengan BuatPakeAI — ${new Date().toLocaleDateString("id-ID", {
             year: "numeric",
             month: "long",
             day: "numeric",
-          })}`,
-        }),
+          })}`
+        ),
         React.createElement(View, {
           style: { borderBottom: "1 solid #D1D5DB", marginBottom: 20 },
         }),
         ...pdfContent,
-        React.createElement(View, {
-          style: {
+        React.createElement(
+          View,
+          {
+            style: {
             borderTop: "1 solid #E5E7EB",
             marginTop: 30,
             paddingTop: 10,
-          },
-          children: React.createElement(Text, {
-            style: {
-              fontSize: 8,
-              color: "#9CA3AF",
-              textAlign: "center",
             },
-            children:
-              "Dokumen ini dibuat secara otomatis oleh BuatPakeAI (buatpakeai.vercel.app)",
-          }),
-        })
+          },
+          React.createElement(
+            Text,
+            {
+              style: {
+                fontSize: 8,
+                color: "#9CA3AF",
+                textAlign: "center",
+              },
+            },
+            "Dokumen ini dibuat secara otomatis oleh BuatPakeAI (buatpakeai.vercel.app)"
+          )
+        )
       )
     );
 

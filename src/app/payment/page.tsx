@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   ShieldCheck,
   CreditCard,
-  Banknote,
   Smartphone,
   Loader2,
   AlertCircle,
@@ -30,6 +29,7 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const packageParam = searchParams.get("package");
+  const prdId = searchParams.get("prd_id");
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,32 +38,32 @@ function PaymentContent() {
   const setInvoiceUrl = usePRDStore((s) => s.setInvoiceUrl);
 
   // Validate package param
-  const pkg =
-    packageParam && VALID_PACKAGES.includes(packageParam as PackageId)
-      ? PRICING[packageParam as PackageId]
-      : null;
+  // Documents created before plan metadata existed only carry basic/pro.
+  // Treat these as the corresponding one-off/current Pro plans, rather than
+  // accepting arbitrary package values from the URL.
+  const normalizedPackage: PackageId | null =
+    packageParam === "basic"
+      ? "pay_per_use"
+      : packageParam === "pro"
+        ? "pro"
+        : packageParam && VALID_PACKAGES.includes(packageParam as PackageId)
+          ? packageParam as PackageId
+          : null;
+  const pkg = normalizedPackage ? PRICING[normalizedPackage] : null;
 
   useEffect(() => {
-    if (packageParam && VALID_PACKAGES.includes(packageParam as PackageId)) {
-      setPackageType(packageParam as PackageId);
+    if (normalizedPackage) {
+      setPackageType(normalizedPackage);
     } else {
       router.push("/pricing");
     }
-  }, [packageParam, setPackageType, router]);
+  }, [normalizedPackage, setPackageType, router]);
 
-  const paymentMethods = [
-    { id: "bca", label: "BCA", icon: Banknote },
-    { id: "mandiri", label: "Mandiri", icon: Banknote },
-    { id: "bri", label: "BRI", icon: Banknote },
-    { id: "bni", label: "BNI", icon: Banknote },
-    { id: "gopay", label: "GoPay", icon: Smartphone },
-    { id: "ovo", label: "OVO", icon: Smartphone },
-    { id: "dana", label: "DANA", icon: Smartphone },
-    { id: "qris", label: "QRIS", icon: Smartphone },
-  ];
+  // SumoPod merchant account currently exposes QRIS as its supported method.
+  const paymentMethods = [{ id: "qris", label: "QRIS", icon: Smartphone }];
 
   const handlePay = async () => {
-    if (!selectedMethod || !packageParam) return;
+    if (!selectedMethod || !normalizedPackage || !prdId) return;
     setPaymentStatus("pending");
     setLoading(true);
     setError(null);
@@ -73,8 +73,9 @@ function PaymentContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          package: packageParam,
+          package: normalizedPackage,
           paymentMethod: selectedMethod,
+          prdId,
         }),
       });
       const result = await res.json();
@@ -87,7 +88,7 @@ function PaymentContent() {
         ) {
           window.location.href = result.data.invoice_url;
         } else {
-          router.push("/questionnaire");
+          router.push(`/preview/${prdId}`);
         }
       } else {
         throw new Error(result.error || "Gagal memproses pembayaran");
@@ -105,6 +106,24 @@ function PaymentContent() {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-[#df5c37] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!prdId) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+        <Card className="max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Buat PRD terlebih dahulu</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-[#6a7180] dark:text-gray-400">
+              Pembayaran harus ditautkan ke PRD yang akan dibuka akses penuhnya.
+            </p>
+            <Button onClick={() => router.push("/questionnaire")}>Mulai membuat PRD</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -214,8 +233,7 @@ function PaymentContent() {
           </Button>
 
           <p className="text-center text-xs text-[#6a7180] dark:text-gray-500">
-            Pembayaran diproses dengan aman via Midtrans, SumoPod, DOKU, atau
-            Ipaymu. Data kamu aman.
+              Pembayaran diproses aman melalui QRIS SumoPod.
           </p>
         </div>
       </div>

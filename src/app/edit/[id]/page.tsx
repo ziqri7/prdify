@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Save, Eye, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 // Gunakan API endpoint — tidak langsung akses Supabase dari client
@@ -18,11 +18,7 @@ export default function EditPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) loadDocument();
-  }, [id]);
-
-  const loadDocument = async () => {
+  const loadDocument = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -41,7 +37,11 @@ export default function EditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) void Promise.resolve().then(loadDocument);
+  }, [id, loadDocument]);
 
   const handleSave = async () => {
     try {

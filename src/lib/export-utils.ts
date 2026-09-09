@@ -4,16 +4,11 @@ import {
   Paragraph,
   TextRun,
   HeadingLevel,
-  TableOfContents,
   AlignmentType,
   BorderStyle,
-  TabStopPosition,
-  TabStopType,
-  WidthType,
   PageBreak,
   Footer,
   Header,
-  PageNumber,
   Table,
   TableRow,
   TableCell,
@@ -342,11 +337,6 @@ function parseMarkdownToDocxElements(
 function parseInlineFormatting(text: string): (TextRun | ExternalHyperlink)[] {
   const runs: (TextRun | ExternalHyperlink)[] = [];
 
-  // Handle links: [text](url)
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
   // Also handle inline bold: **text**
   const parts: { type: "text" | "bold" | "link"; text: string; url?: string }[] = [];
   let remaining = text;
@@ -355,7 +345,6 @@ function parseInlineFormatting(text: string): (TextRun | ExternalHyperlink)[] {
     // Check for bold
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
     const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
-    const tableMatch = remaining.match(/`([^`]+)`/);
 
     let earliest = Infinity;
     let type: "bold" | "link" | "code" | null = null;
@@ -457,32 +446,4 @@ function convertTableToDocx(
       return new TableRow({ children: cells });
     }),
   });
-}
-
-/**
- * Parse markdown table to array of rows
- */
-function parseMarkdownTable(
-  tableBlock: string
-): { cells: string[]; isHeader: boolean }[] {
-  const lines = tableBlock
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.startsWith("|"));
-  const rows: { cells: string[]; isHeader: boolean }[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    // Skip separator line (|---|)
-    if (/^\|[\s-:]+\|$/.test(lines[i])) continue;
-
-    const cells = lines[i]
-      .split("|")
-      .filter((c) => c.trim() !== "")
-      .map((c) => c.trim());
-    if (cells.length > 0) {
-      rows.push({ cells, isHeader: i === 0 });
-    }
-  }
-
-  return rows;
 }

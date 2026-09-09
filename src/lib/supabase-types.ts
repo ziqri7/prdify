@@ -24,6 +24,11 @@ export interface Database {
         Insert: Omit<Payment, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<Payment, 'id'>>
       }
+      subscriptions: {
+        Row: Subscription
+        Insert: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Subscription, 'id'>>
+      }
     }
     Views: {
       user_stats: {
@@ -77,12 +82,31 @@ export interface Payment {
   user_id: string | null
   prd_id: string | null
   package_type: PackageType
+  plan_id: PackageId
   amount: number
   payment_method: string | null
   status: PaymentStatus
   gateway: string | null
   xendit_invoice_id: string | null
   paid_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Subscriptions ──
+export type SubscriptionPlanId = 'starter' | 'pro' | 'pro_tahunan'
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'
+
+export interface Subscription {
+  id: string
+  user_id: string
+  plan_id: SubscriptionPlanId
+  status: SubscriptionStatus
+  current_period_start: string
+  current_period_end: string
+  documents_used: number
+  document_limit: number | null
+  payment_id: string | null
   created_at: string
   updated_at: string
 }
@@ -99,3 +123,5 @@ export interface UserStats {
 export type Tables<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Row']
 export type Enums = never
+
+export type PackageId = 'pay_per_use' | 'starter' | 'pro' | 'pro_tahunan'

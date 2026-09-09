@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { PRICING, getDbPackageType } from "@/lib/constants";
+import { createHash } from "crypto";
+import { PRICING, getDbPackageType, type PackageId } from "@/lib/constants";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getAuthenticatedUser } from "@/lib/server-auth";
 
 /** Gateway configuration — enable whichever gateway(s) you use */
 const GATEWAYS = {
   midtrans: !!process.env.MIDTRANS_SERVER_KEY,
-  sumopod: !!process.env.SUMOPOD_API_KEY,
-  doku: !!process.env.DOKU_CLIENT_ID,
-  ipaymu: !!process.env.IPAYMU_API_KEY,
+  sumopod: !!process.env.SUMOPOD_API_KEY && !!process.env.SUMOPOD_WEBHOOK_SECRET,
+  doku: false,
+  ipaymu: false,
 } as const;
 
 function isGatewayAvailable(name: keyof typeof GATEWAYS): boolean {
@@ -21,7 +23,7 @@ function getActiveGateways(): string[] {
 // ---------------------------------------------------------------------------
 // MIDTRANS
 // ---------------------------------------------------------------------------
-async function createMidtransInvoice(pkg: string, amount: number, paymentMethod: string) {
+async function createMidtransInvoice(pkg: string, amount: number, paymentMethod: string, prdId: string) {
   const orderId = `BPAI-${pkg}-${Date.now()}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
 
@@ -34,7 +36,7 @@ async function createMidtransInvoice(pkg: string, amount: number, paymentMethod:
     customer_details: {},
     enabled_payments: getMidtransPaymentMethods(paymentMethod),
     callbacks: {
-      finish: `${appUrl}/questionnaire?payment=success`,
+      finish: `${appUrl}/preview/${prdId}?payment=success`,
       error: `${appUrl}/payment?status=failed`,
       pending: `${appUrl}/payment?status=pending`,
     },
@@ -93,7 +95,7 @@ function getMidtransPaymentMethods(method: string): string[] {
 // ---------------------------------------------------------------------------
 // SUMOPOD PAY
 // ---------------------------------------------------------------------------
-async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: string) {
+async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: string, prdId: string) {
   const orderId = `BPAI-${pkg}-${Date.now()}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
 
@@ -102,10 +104,10 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
     amount,
     currency: "IDR",
     expires_in_hours: 24,
-    success_return_url: `${appUrl}/questionnaire?payment=success`,
+    success_return_url: `${appUrl}/preview/${prdId}?payment=success`,
     cancel_return_url: `${appUrl}/payment?status=failed`,
-    notification_url: `${appUrl}/api/payment`,
     description: `BuatPakeAI - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} Package`,
+    payment_method_type_code: getSumopodPaymentMethod(paymentMethod),
   };
 
   const baseUrl =
@@ -135,10 +137,17 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
   };
 }
 
+function getSumopodPaymentMethod(method: string): string {
+  const map: Record<string, string> = {
+    qris: "QRIS",
+  };
+  return map[method] || "QRIS";
+}
+
 // ---------------------------------------------------------------------------
 // DOKU
 // ---------------------------------------------------------------------------
-async function createDokuInvoice(pkg: string, amount: number, paymentMethod: string) {
+async function createDokuInvoice(pkg: string, amount: number, paymentMethod: string, prdId: string) {
   const externalId = `BPAI-${pkg}-${Date.now()}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
 
@@ -153,11 +162,11 @@ async function createDokuInvoice(pkg: string, amount: number, paymentMethod: str
       invoice_number: externalId,
       amount,
       currency: "IDR",
-      callback_url: `${appUrl}/api/payment`,
+      callback_url: `${appUrl}/api/payment/webhook/doku`,
       auto_redirect: true,
       url_failed: `${appUrl}/payment?status=failed`,
-      url_success: `${appUrl}/questionnaire?payment=success`,
-      notify_url: `${appUrl}/api/payment`,
+      url_success: `${appUrl}/preview/${prdId}?payment=success`,
+      notify_url: `${appUrl}/api/payment/webhook/doku`,
     },
     payment: {
       payment_due_date: 24,
@@ -223,7 +232,7 @@ function getDokuPaymentMethods(method: string): string[] {
 // ---------------------------------------------------------------------------
 // IPAYMU
 // ---------------------------------------------------------------------------
-async function createIpaymuInvoice(pkg: string, amount: number, paymentMethod: string) {
+async function createIpaymuInvoice(pkg: string, amount: number, paymentMethod: string, prdId: string) {
   const externalId = `BPAI-${pkg}-${Date.now()}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
 
@@ -232,14 +241,13 @@ async function createIpaymuInvoice(pkg: string, amount: number, paymentMethod: s
   body.append("qty", "1");
   body.append("price", amount.toString());
   body.append("description", `PRD - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} Package`);
-  body.append("returnUrl", `${appUrl}/questionnaire?payment=success`);
+  body.append("returnUrl", `${appUrl}/preview/${prdId}?payment=success`);
   body.append("cancelUrl", `${appUrl}/payment?status=failed`);
-  body.append("notifyUrl", `${appUrl}/api/payment`);
+  body.append("notifyUrl", `${appUrl}/api/payment/webhook/ipaymu`);
   body.append("referenceId", externalId);
   body.append("paymentMethod", getIpaymuPaymentMethod(paymentMethod));
 
-  const hash = require("crypto")
-    .createHash("sha256")
+  const hash = createHash("sha256")
     .update(
       `BUATPAKEAI:${amount}:${process.env.IPAYMU_API_KEY}:${process.env.IPAYMU_PRIVATE_KEY}`
     )
@@ -299,17 +307,23 @@ function getIpaymuPaymentMethod(method: string): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { package: pkg, paymentMethod } = body;
+    const { package: pkg, paymentMethod, prdId } = body;
 
-    if (!pkg || !paymentMethod) {
+    if (!pkg || !paymentMethod || !prdId || typeof prdId !== "string") {
       return NextResponse.json(
-        { error: "Package dan metode pembayaran wajib diisi" },
+        { error: "Package, PRD, dan metode pembayaran wajib diisi" },
         { status: 400 }
       );
     }
 
-    const dbPackageType = getDbPackageType(pkg as any);
-    const pricingConfig = PRICING[pkg as keyof typeof PRICING];
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Silakan masuk untuk membuat pembayaran" }, { status: 401 });
+    }
+
+    const requestedPackage = pkg as PackageId;
+    const dbPackageType = getDbPackageType(requestedPackage);
+    const pricingConfig = PRICING[requestedPackage];
     if (!pricingConfig) {
       return NextResponse.json(
         { error: "Package tidak valid" },
@@ -318,18 +332,58 @@ export async function POST(request: Request) {
     }
     const amount = pricingConfig.price;
 
+    // An invoice may only unlock a document owned by the authenticated customer.
+    // The server derives every other document attribute; none are trusted from the client.
+    const { data: document, error: documentError } = await supabaseAdmin
+      .from("prd_documents")
+      .select("id, user_id, package_type, is_paid")
+      .eq("id", prdId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (documentError) throw documentError;
+    if (!document) {
+      return NextResponse.json({ error: "PRD tidak ditemukan atau bukan milik kamu" }, { status: 404 });
+    }
+    if (document.is_paid) {
+      return NextResponse.json({ error: "PRD ini sudah memiliki akses penuh" }, { status: 409 });
+    }
+    if (document.package_type !== dbPackageType) {
+      return NextResponse.json({ error: "Paket pembayaran tidak sesuai dengan PRD" }, { status: 400 });
+    }
+
+    const { data: pendingPayment, error: pendingPaymentError } = await supabaseAdmin
+      .from("payments")
+      .select("id")
+      .eq("prd_id", prdId)
+      .eq("status", "PENDING")
+      .maybeSingle();
+    if (pendingPaymentError) throw pendingPaymentError;
+    if (pendingPayment) {
+      return NextResponse.json(
+        { error: "Masih ada pembayaran yang menunggu untuk PRD ini" },
+        { status: 409 }
+      );
+    }
+
     // Coba gateway aktif secara berurutan, urut berdasarkan preferensi
     const gateways = getActiveGateways();
 
-    // Jika tidak ada gateway aktif, fallback ke mock
+    // Mock is strictly local/development. Production must use a gateway with
+    // a signed webhook implementation so a redirect cannot unlock a PRD.
     if (gateways.length === 0) {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "Gateway pembayaran belum dikonfigurasi" },
+          { status: 503 }
+        );
+      }
       const invoice = {
         id: `INV-${Date.now()}`,
         external_id: `BPAI-${pkg}-${Date.now()}`,
         amount,
         status: "PENDING",
         payment_method: paymentMethod,
-        invoice_url: "#",
+        invoice_url: `/preview/${prdId}?payment=pending`,
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         gateway: "mock",
       };
@@ -338,7 +392,10 @@ export async function POST(request: Request) {
       try {
         await supabaseAdmin.from('payments').insert({
           external_id: invoice.external_id,
+          user_id: user.id,
+          prd_id: prdId,
           package_type: dbPackageType,
+          plan_id: requestedPackage,
           amount,
           payment_method: paymentMethod,
           status: 'PENDING',
@@ -359,8 +416,8 @@ export async function POST(request: Request) {
     // Coba setiap gateway yang aktif
     let lastError: unknown;
 
-    // Prioritaskan gateway: midtrans > sumopod > doku > ipaymu
-    const preferredOrder: (keyof typeof GATEWAYS)[] = ["midtrans", "sumopod", "doku", "ipaymu"];
+    // Prioritaskan SumoPod sesuai provider yang dipilih untuk produk ini.
+    const preferredOrder: (keyof typeof GATEWAYS)[] = ["sumopod", "midtrans", "doku", "ipaymu"];
 
     for (const gw of preferredOrder) {
       if (!isGatewayAvailable(gw)) continue;
@@ -369,16 +426,16 @@ export async function POST(request: Request) {
         let result;
         switch (gw) {
           case "midtrans":
-            result = await createMidtransInvoice(pkg, amount, paymentMethod);
+            result = await createMidtransInvoice(pkg, amount, paymentMethod, prdId);
             break;
           case "sumopod":
-            result = await createSumopodInvoice(pkg, amount, paymentMethod);
+            result = await createSumopodInvoice(pkg, amount, paymentMethod, prdId);
             break;
           case "doku":
-            result = await createDokuInvoice(pkg, amount, paymentMethod);
+            result = await createDokuInvoice(pkg, amount, paymentMethod, prdId);
             break;
           case "ipaymu":
-            result = await createIpaymuInvoice(pkg, amount, paymentMethod);
+            result = await createIpaymuInvoice(pkg, amount, paymentMethod, prdId);
             break;
         }
         // Simpan record payment ke database
@@ -386,7 +443,10 @@ export async function POST(request: Request) {
           try {
             await supabaseAdmin.from('payments').insert({
               external_id: result.external_id,
+              user_id: user.id,
+              prd_id: prdId,
               package_type: dbPackageType,
+              plan_id: requestedPackage,
               amount,
               payment_method: paymentMethod,
               status: 'PENDING',
@@ -418,52 +478,6 @@ export async function POST(request: Request) {
     console.error("Payment error:", error);
     return NextResponse.json(
       { error: "Gagal memproses pembayaran" },
-      { status: 500 }
-    );
-  }
-}
-
-// Webhook handler untuk semua gateway
-export async function PATCH(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, external_id, status, paid_amount, gateway } = body;
-
-    // Cari payment by external_id
-    const { data: payment } = await supabaseAdmin
-      .from('payments')
-      .select('id, prd_id')
-      .eq('external_id', external_id)
-      .single();
-
-    if (payment) {
-      // Update payment status
-      await supabaseAdmin
-        .from('payments')
-        .update({
-          status,
-          paid_at: status === 'PAID' ? new Date().toISOString() : null,
-          gateway: gateway || null,
-        })
-        .eq('external_id', external_id);
-
-      // If paid, unlock the PRD
-      if (status === 'PAID' && payment.prd_id) {
-        await supabaseAdmin
-          .from('prd_documents')
-          .update({ is_paid: true, payment_id: payment.id })
-          .eq('id', payment.prd_id);
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Status pembayaran berhasil diperbarui",
-    });
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return NextResponse.json(
-      { error: "Gagal memproses webhook" },
       { status: 500 }
     );
   }

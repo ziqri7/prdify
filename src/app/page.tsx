@@ -67,7 +67,7 @@ const steps = [
   {
     num: "01",
     title: "Buat PRD Gratis",
-    desc: "Jawab 20 pertanyaan — gratis, tanpa perlu login",
+    desc: "Masuk dengan Google, lalu jawab 20 pertanyaan secara gratis",
   },
   {
     num: "02",
@@ -149,34 +149,55 @@ export default function HomePage() {
 
           {/* Quick Action Shortcuts */}
           <div className="mx-auto mt-14 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href="/questionnaire" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg">
+            <Link href="/questionnaire" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#df5c37]/10 p-2.5 text-[#df5c37]">
                 <FileText className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold">Buat PRD</h3>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Buat PRD</h3>
               <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Isi questionnaire, generate PRD otomatis</p>
             </Link>
-            <Link href="/template" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg">
+            <Link href="/template" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#d97706]/10 p-2.5 text-[#d97706]">
                 <Eye className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold">Template PRD</h3>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Template PRD</h3>
               <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Lihat contoh PRD jadi sebelum mulai</p>
             </Link>
-            <Link href="/pricing" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg">
+            <Link href="/pricing" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#df5c37]/10 p-2.5 text-[#df5c37]">
                 <Sparkles className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold">Lihat Harga</h3>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Lihat Harga</h3>
               <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Cek paket dan pilih sesuai kebutuhan</p>
             </Link>
-            <Link href="/dashboard" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg">
+            <Link href="/dashboard" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#6a7180]/15 p-2.5 text-[#6a7180] dark:text-gray-300">
                 <Briefcase className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold">Dashboard</h3>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Dashboard</h3>
               <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Kelola PRD yang sudah kamu buat</p>
             </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="mx-auto mt-14 flex max-w-2xl items-center justify-center gap-10 sm:gap-14">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">Live</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">39.9K</div>
+              <div className="text-sm text-[#6a7180] dark:text-gray-400">User</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">19.4K</div>
+              <div className="text-sm text-[#6a7180] dark:text-gray-400">PRD</div>
+            </div>
           </div>
         </div>
       </section>
@@ -185,7 +206,7 @@ export default function HomePage() {
       <section className="border-t border-[#dcdee1] dark:border-gray-800 bg-[#f3f5f6] dark:bg-[#1c2332]/80">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-gray-900 dark:text-white">
               Cara Kerjanya
             </h2>
             <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400">
@@ -203,7 +224,7 @@ export default function HomePage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#df5c37] text-white text-xl font-bold shadow-lg shadow-[#df5c37]/20 dark:shadow-[#df5c37]/20 transition-transform group-hover:scale-110">
                   {step.num}
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{step.title}</h3>
                 <p className="mt-2 text-sm text-[#6a7180] dark:text-gray-400">
                   {step.desc}
                 </p>
@@ -216,7 +237,7 @@ export default function HomePage() {
       {/* Target Audience */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-gray-900 dark:text-white">
             Untuk Siapa {APP_NAME}?
           </h2>
           <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400">
@@ -234,7 +255,7 @@ export default function HomePage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f3f5f6] dark:bg-[#df5c37]/10 text-[#df5c37] dark:text-[#df5c37] transition-transform group-hover:scale-110">
                 <item.icon className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">{item.title}</h3>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
               <p className="mt-2 text-sm text-[#6a7180] dark:text-gray-400 leading-relaxed">
                 {item.description}
               </p>
@@ -247,7 +268,7 @@ export default function HomePage() {
       <section className="border-t border-[#dcdee1] dark:border-gray-800 bg-[#f3f5f6] dark:bg-[#1c2332]/80">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-gray-900 dark:text-white">
               Kenapa {APP_NAME}?
             </h2>
             <p className="mt-4 text-lg text-[#6a7180] dark:text-gray-400">
@@ -265,7 +286,7 @@ export default function HomePage() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#df5c37] text-white shadow-lg shadow-[#df5c37]/20 transition-transform group-hover:scale-110">
                   <feature.icon className="h-7 w-7" />
                 </div>
-                <h3 className="mt-5 text-lg font-semibold">
+                <h3 className="mt-5 text-lg font-semibold text-gray-900 dark:text-white">
                   {feature.title}
                 </h3>
                 <p className="mt-2 text-sm text-[#6a7180] dark:text-gray-400 leading-relaxed">
