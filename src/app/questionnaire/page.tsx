@@ -178,6 +178,18 @@ export default function QuestionnairePage() {
           <p className="mt-2 text-[#6a7180] dark:text-gray-400">
             Jawab sebisamu, nanti bisa diedit lagi setelah PRD jadi
           </p>
+          {(packageType === "pro" || packageType === "pro_tahunan") && (
+            <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-left text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                <p>
+                  <strong>Benefit paket Pro aktif:</strong> PRD ini akan disusun menggunakan
+                  GPT-OSS 120B untuk membantu menghasilkan analisis kebutuhan, prioritas MVP,
+                  dan detail yang lebih mendalam.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Question */}

@@ -108,6 +108,16 @@ export default function PricingPage() {
             Upgrade untuk AI premium dan fitur lebih. Bisa upgrade, downgrade,
             atau cancel kapan aja.
           </p>
+          <div className="mt-6 mx-auto max-w-2xl rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-left text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100">
+            <div className="flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+              <p>
+                <strong>Keunggulan Pro:</strong> setiap PRD pada paket Pro dan Pro Tahunan
+                dibuat dengan GPT-OSS 120B, model AI yang lebih kuat untuk membantu
+                menyusun kebutuhan, prioritas MVP, dan detail implementasi secara lebih mendalam.
+              </p>
+            </div>
+          </div>
 
           {/* Billing Toggle */}
           <div className="mt-8 flex items-center justify-center gap-2">
@@ -262,6 +272,16 @@ export default function PricingPage() {
               <p className="text-sm text-[#6a7180] dark:text-gray-400">
                 Pay Per Use memberi satu kredit prabayar — cocok untuk yang jarang
                 membuat PRD. Starter/Pro memberi kuota langganan untuk penggunaan rutin.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-1">
+                Apa keunggulan AI di paket Pro?
+              </h3>
+              <p className="text-sm text-[#6a7180] dark:text-gray-400">
+                Pro dan Pro Tahunan menggunakan GPT-OSS 120B untuk pembuatan PRD,
+                sehingga cocok bila kamu membutuhkan analisis kebutuhan dan rincian MVP
+                yang lebih mendalam. Starter memakai DeepSeek Flash agar tetap hemat.
               </p>
             </div>
             <div>

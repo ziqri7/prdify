@@ -13,7 +13,7 @@ import {
   Smartphone,
   Loader2,
   AlertCircle,
-  Tag,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePRDStore } from "@/store/use-prd-store";
@@ -150,6 +150,18 @@ function PaymentContent() {
                 <span className="font-semibold">{pkg.priceLabel}</span>
               </div>
               <div className="border-t border-[#dcdee1] dark:border-gray-800 my-2" />
+              {(normalizedPackage === "pro" || normalizedPackage === "pro_tahunan") && (
+                <div className="my-3 rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100">
+                  <div className="flex gap-2">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                    <p>
+                      <strong>Benefit Pro:</strong> PRD kamu akan dibuat dengan GPT-OSS 120B,
+                      model AI yang lebih kuat untuk menyusun analisis kebutuhan, prioritas MVP,
+                      dan detail PRD yang lebih mendalam.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between py-2">
                 <span className="font-semibold">Total</span>
                 <span className="text-xl font-bold text-[#df5c37]">
