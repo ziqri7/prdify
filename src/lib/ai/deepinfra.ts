@@ -47,6 +47,10 @@ export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
         messages: buildPRDMessages(answers),
         temperature: 0.35,
         max_tokens: 3000,
+        // The PRD contract already supplies the required planning structure.
+        // Disabling the provider's hidden reasoning trace keeps each paid
+        // generation faster and avoids paying for reasoning tokens users never see.
+        reasoning_effort: "none",
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
