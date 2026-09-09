@@ -38,14 +38,6 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    // Safe diagnostic only: helps distinguish a missing PKCE verifier from a
-    // provider-side exchange failure without logging authorization codes or cookies.
-    console.warn('OAuth callback exchange failed', {
-      message: error.message,
-      hasPkceVerifier: request.cookies
-        .getAll()
-        .some(({ name }) => name.endsWith('-code-verifier')),
-    })
   }
 
   return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_failed`)
