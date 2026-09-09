@@ -18,9 +18,9 @@ export class AIProviderError extends Error {
 }
 
 function getTimeoutMs(): number {
-  const configured = Number.parseInt(process.env.DEEPINFRA_TIMEOUT_MS ?? "45000", 10);
-  if (!Number.isFinite(configured)) return 45000;
-  return Math.min(Math.max(configured, 10000), 60000);
+  const configured = Number.parseInt(process.env.DEEPINFRA_TIMEOUT_MS ?? "60000", 10);
+  if (!Number.isFinite(configured)) return 60000;
+  return Math.min(Math.max(configured, 10000), 90000);
 }
 
 export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
@@ -46,7 +46,7 @@ export async function createAIPrd(answers: PRDAnswers): Promise<AIPrdDocument> {
         model: process.env.DEEPINFRA_MODEL?.trim() || DEFAULT_MODEL,
         messages: buildPRDMessages(answers),
         temperature: 0.35,
-        max_tokens: 6000,
+        max_tokens: 4200,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
