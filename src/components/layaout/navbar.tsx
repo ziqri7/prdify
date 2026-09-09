@@ -55,7 +55,7 @@ export function Navbar() {
   const navLinks: NavLink[] = [
     { href: "/", label: "Beranda" },
     { href: "/pricing", label: "Harga", badge: "Promo" },
-    { href: "/template", label: "Template" },
+    { href: "/template", label: "Inspirasi" },
   ];
 
   const getUserInitial = () => {

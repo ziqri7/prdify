@@ -159,8 +159,8 @@ export default function HomePage() {
               <div className="inline-flex self-start rounded-lg bg-[#d97706]/10 p-2.5 text-[#d97706]">
                 <Eye className="h-5 w-5" />
               </div>
-              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Template PRD</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Lihat contoh PRD jadi sebelum mulai</p>
+              <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">Inspirasi PRD</h3>
+              <p className="mt-1 text-xs leading-relaxed text-[#6a7180] dark:text-gray-400">Lihat contoh untuk booking, marketplace, edukasi, dan operasional</p>
             </Link>
             <Link href="/pricing" className="group relative flex flex-col justify-start rounded-xl border-2 border-[#dcdee1] dark:border-gray-700 bg-white dark:bg-[#2a3040] p-5 text-left transition-all duration-150 hover:border-[#df5c37]/40 hover:shadow-lg hover:dark:border-[#df5c37]/40">
               <div className="inline-flex self-start rounded-lg bg-[#df5c37]/10 p-2.5 text-[#df5c37]">

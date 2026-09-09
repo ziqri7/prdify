@@ -29,7 +29,7 @@ export function Footer() {
             <ul className="space-y-2">
               {[
                 { href: "/pricing", label: "Harga", badge: "Promo" },
-                { href: "/template", label: "Template PRD" },
+                { href: "/template", label: "Inspirasi PRD" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
