@@ -3,41 +3,35 @@ import { Button } from "@/components/ui/button";
 import { APP_NAME, APP_TAGLINE, PRICING, getStarterPricePerPrd } from "@/lib/constants";
 import {
   FileText,
-  MousePointerClick,
-  Download,
   Sparkles,
   ArrowRight,
   Users,
   GraduationCap,
   Briefcase,
   Eye,
-  Lock,
+  CheckCircle2,
+  CircleHelp,
+  Send,
 } from "lucide-react";
 
 const features = [
   {
-    icon: Lock,
-    title: "Masuk dengan Google",
+    icon: CheckCircle2,
+    title: "Kebutuhan lebih terstruktur",
     description:
-      "Buat akun atau masuk dengan Google agar PRD dan riwayatmu tersimpan aman.",
+      "Masalah, pengguna, ruang lingkup MVP, fitur prioritas, dan alur penggunaan disusun dalam satu dokumen.",
   },
   {
-    icon: Sparkles,
-    title: "Pilih Paket yang Sesuai",
+    icon: CircleHelp,
+    title: "Asumsi tidak tersembunyi",
     description:
-      "Mulai dari satu kredit untuk satu ide, atau berlangganan untuk kebutuhan rutin.",
+      "Asumsi dan pertanyaan terbuka dibuat terlihat, supaya tidak langsung dianggap sebagai fakta saat mulai membangun.",
   },
   {
-    icon: MousePointerClick,
-    title: "Jawab Pertanyaan Produk",
+    icon: Send,
+    title: "Brief untuk langkah berikutnya",
     description:
-      "Ceritakan masalah, pengguna, fitur, dan tujuan produkmu dalam panduan singkat.",
-  },
-  {
-    icon: Download,
-    title: "Tinjau & Download",
-    description:
-      "Tinjau hasilnya, lalu download sesuai fitur paket yang kamu pilih.",
+      "Tinjau dan gunakan hasilnya sebagai bahan diskusi dengan developer atau AI coding tool sebelum proses build.",
   },
 ];
 
@@ -91,13 +85,13 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative isolate overflow-hidden">
         {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#f3f5f6] via-white to-white dark:from-[#2a3040]/20 dark:via-[#1c2332] dark:to-[#1c2332]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f3f5f6] via-white to-white dark:from-[#2a3040]/20 dark:via-[#1c2332] dark:to-[#1c2332]" />
         <div className="absolute top-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/2 -translate-y-1/4 rounded-full bg-gradient-to-br from-[#df5c37]/20 to-[#d97706]/20 blur-3xl dark:from-[#df5c37]/10 dark:to-[#d97706]/10" />
         <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] -translate-x-1/3 translate-y-1/4 rounded-full bg-gradient-to-tr from-[#d97706]/20 to-[#df5c37]/20 blur-3xl dark:from-[#d97706]/10 dark:to-[#df5c37]/10" />
 
-        <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pt-32">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pt-32">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#fffbeb] dark:border-[#d97706]/30 bg-[#fffbeb] dark:bg-[#d97706]/10 px-4 py-1.5 text-sm font-medium text-[#d97706] dark:text-[#fbbf24]">
               <Sparkles className="h-4 w-4" />
@@ -143,6 +137,28 @@ export default function HomePage() {
                   Lihat Paket & Harga
                 </Button>
               </Link>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-14 max-w-3xl overflow-hidden rounded-2xl border border-[#dcdee1] bg-white/95 text-left shadow-2xl shadow-[#df5c37]/10 backdrop-blur dark:border-gray-700 dark:bg-[#2a3040]/95">
+            <div className="flex items-center justify-between border-b border-[#dcdee1] bg-[#f8f9fa] px-5 py-3 dark:border-gray-700 dark:bg-[#1c2332]">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1c2332] dark:text-white">
+                <FileText className="h-4 w-4 text-[#df5c37]" />
+                Preview hasil PRD
+              </div>
+              <span className="rounded-full bg-[#df5c37]/10 px-2.5 py-1 text-xs font-semibold text-[#df5c37]">Contoh ilustratif</span>
+            </div>
+            <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
+              {[
+                ["Masalah", "Jadwal lapangan masih ditanyakan satu per satu lewat chat admin."],
+                ["MVP prioritas", "Cari jadwal, pilih slot, reservasi, dan konfirmasi booking."],
+                ["Pertanyaan terbuka", "Apakah pembayaran dilakukan di aplikasi atau di lokasi?"],
+              ].map(([title, content]) => (
+                <div key={title} className="rounded-xl border border-[#dcdee1] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-[#1c2332]">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#df5c37]">{title}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#6a7180] dark:text-gray-300">{content}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -213,70 +229,80 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PRD Outcome Preview */}
+      {/* Explain the product before asking a visitor to decide on a package. */}
+      <section className="border-y border-[#dcdee1] bg-[#f8f9fa] dark:border-gray-800 dark:bg-[#1c2332]/80">
+        <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#df5c37]/10 px-3 py-1.5 text-sm font-medium text-[#df5c37]">
+            <FileText className="h-4 w-4" />
+            Kenali hasil yang akan kamu dapatkan
+          </div>
+          <h2 className="mt-5 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+            Apa itu PRD?
+          </h2>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-[#6a7180] dark:text-gray-400">
+            PRD (<span className="font-medium text-[#1c2332] dark:text-gray-200">Product Requirements Document</span>) adalah dokumen yang mengubah ide produk menjadi rencana yang jelas: siapa penggunanya, masalah yang diselesaikan, fitur yang dibangun lebih dulu, alur penggunaan, dan ukuran keberhasilannya.
+          </p>
+          <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-[#6a7180] dark:text-gray-400">
+            Dengan PRD, kamu tidak perlu menjelaskan ide dari nol berulang kali saat berdiskusi dengan developer atau menggunakan AI coding tool.
+          </p>
+        </div>
+      </section>
+
+      {/* Make the value exchange concrete instead of only describing it. */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#df5c37]/10 px-3 py-1.5 text-sm font-medium text-[#df5c37]">
-              <FileText className="h-4 w-4" />
-              Bukan sekadar rangkuman ide
-            </div>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              Dapatkan PRD yang memberi timmu arah untuk mulai membangun
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-[#6a7180] dark:text-gray-400">
-              BuatPakeAI menyusun jawabanmu menjadi dokumen yang lebih mudah dibaca,
-              ditinjau, dan diteruskan ke developer atau AI coding tool.
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#df5c37]/10 px-3 py-1.5 text-sm font-medium text-[#df5c37]">
+            <Sparkles className="h-4 w-4" />
+            Dari jawabanmu, bukan template kosong
+          </div>
+          <h2 className="mt-5 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+            Dari ide mentah ke PRD siap dibangun
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-[#6a7180] dark:text-gray-400">
+            Lihat bagaimana satu ide singkat dapat diterjemahkan menjadi titik awal yang lebih jelas untuk proses build.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_auto_1.25fr] lg:items-stretch">
+          <article className="rounded-2xl border border-[#dcdee1] bg-[#f8f9fa] p-6 dark:border-gray-700 dark:bg-[#1c2332] sm:p-8">
+            <span className="inline-flex rounded-full bg-[#6a7180]/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#6a7180] dark:text-gray-300">Sebelum</span>
+            <h3 className="mt-5 text-xl font-bold text-[#1c2332] dark:text-white">Ide yang masih mentah</h3>
+            <blockquote className="mt-5 border-l-4 border-[#d97706] pl-4 text-lg leading-relaxed text-[#4b5563] dark:text-gray-300">
+              “Saya ingin aplikasi booking lapangan supaya orang tidak perlu chat admin terus.”
+            </blockquote>
+            <p className="mt-6 text-sm leading-relaxed text-[#6a7180] dark:text-gray-400">
+              Ini sudah sebuah awal yang baik, tetapi belum menjawab ruang lingkup, prioritas, atau hal yang harus dipastikan sebelum dibangun.
             </p>
-            <ul className="mt-7 space-y-4">
-              {[
-                ["Kebutuhan yang terstruktur", "Masalah, pengguna, ruang lingkup MVP, fitur, dan alur pengguna dalam satu dokumen."],
-                ["Batasan yang jelas", "Asumsi dan pertanyaan terbuka ditandai agar tim tidak menganggapnya sebagai fakta."],
-                ["Siap menjadi brief implementasi", "Salin PRD atau brief implementasi untuk memulai diskusi teknis dan proses build."],
-              ].map(([title, description]) => (
-                <li key={title} className="flex gap-3">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-                    <FileText className="h-3.5 w-3.5" />
-                  </div>
-                  <p className="text-sm leading-relaxed text-[#6a7180] dark:text-gray-400">
-                    <strong className="text-[#1c2332] dark:text-white">{title}.</strong>{" "}
-                    {description}
-                  </p>
-                </li>
-              ))}
-            </ul>
+          </article>
+
+          <div className="hidden items-center justify-center lg:flex" aria-hidden="true">
+            <ArrowRight className="h-8 w-8 text-[#df5c37]" />
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-[#df5c37]/15 to-[#d97706]/10 blur-2xl" />
-            <div className="overflow-hidden rounded-2xl border border-[#dcdee1] bg-white shadow-xl dark:border-gray-700 dark:bg-[#2a3040]">
-              <div className="flex items-center justify-between border-b border-[#dcdee1] bg-[#f8f9fa] px-5 py-3 dark:border-gray-700 dark:bg-[#1c2332]">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <FileText className="h-4 w-4 text-[#df5c37]" />
-                  Contoh struktur PRD
-                </div>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Siap ditinjau</span>
+          <article className="overflow-hidden rounded-2xl border border-[#df5c37]/30 bg-white shadow-xl shadow-[#df5c37]/10 dark:border-[#df5c37]/40 dark:bg-[#2a3040]">
+            <div className="flex items-center justify-between border-b border-[#dcdee1] bg-[#fffbeb] px-5 py-3 dark:border-gray-700 dark:bg-[#d97706]/10">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1c2332] dark:text-white">
+                <FileText className="h-4 w-4 text-[#df5c37]" />
+                Sesudah: potongan PRD
               </div>
-              <div className="space-y-5 p-6 text-sm">
-                <div>
-                  <p className="font-bold text-[#1c2332] dark:text-white">PRD: Platform Reservasi Lapangan</p>
-                  <p className="mt-1 text-xs text-[#6a7180] dark:text-gray-400">Ringkasan produk, target pengguna, dan ruang lingkup MVP</p>
-                </div>
-                <div className="rounded-xl border border-[#dcdee1] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-[#1c2332]">
-                  <p className="font-semibold text-[#df5c37]">03. Masalah & Solusi</p>
-                  <p className="mt-2 leading-relaxed text-[#6a7180] dark:text-gray-400">Pengguna kesulitan melihat ketersediaan lapangan secara real-time. MVP memusatkan pencarian jadwal, reservasi, dan konfirmasi.</p>
-                </div>
-                <div className="rounded-xl border border-[#dcdee1] p-4 dark:border-gray-700">
-                  <p className="font-semibold text-[#df5c37]">04. Fitur MVP & Prioritas</p>
-                  <div className="mt-3 space-y-2 text-[#6a7180] dark:text-gray-400">
-                    <p><span className="mr-2 rounded bg-[#df5c37]/10 px-1.5 py-0.5 text-xs font-semibold text-[#df5c37]">P0</span> Pencarian jadwal dan reservasi</p>
-                    <p><span className="mr-2 rounded bg-[#d97706]/10 px-1.5 py-0.5 text-xs font-semibold text-[#d97706]">P1</span> Notifikasi konfirmasi</p>
-                  </div>
-                </div>
-                <p className="border-l-2 border-[#d97706] pl-3 text-xs italic leading-relaxed text-[#6a7180] dark:text-gray-400">Contoh ilustratif. Isi dokumen selalu dibuat berdasarkan jawaban yang kamu berikan.</p>
-              </div>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Siap ditinjau</span>
             </div>
-          </div>
+            <div className="grid gap-3 p-5 text-sm sm:grid-cols-2 sm:p-6">
+              {[
+                ["Target pengguna", "Pemain dan admin lapangan yang membutuhkan jadwal terkini."],
+                ["Masalah utama", "Ketersediaan lapangan belum terlihat tanpa menghubungi admin."],
+                ["MVP prioritas", "Pencarian jadwal, pemilihan slot, reservasi, dan konfirmasi."],
+                ["Asumsi terbuka", "Metode pembayaran dan aturan pembatalan perlu diputuskan."],
+                ["Metrik awal", "Jumlah reservasi selesai dan waktu respons konfirmasi."],
+              ].map(([title, content], index) => (
+                <div key={title} className={index === 4 ? "rounded-xl border border-[#dcdee1] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-[#1c2332] sm:col-span-2" : "rounded-xl border border-[#dcdee1] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-[#1c2332]"}>
+                  <p className="font-semibold text-[#df5c37]">{title}</p>
+                  <p className="mt-1.5 leading-relaxed text-[#6a7180] dark:text-gray-400">{content}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mx-5 mb-5 border-l-2 border-[#d97706] pl-3 text-xs italic leading-relaxed text-[#6a7180] dark:text-gray-400 sm:mx-6 sm:mb-6">Contoh ilustratif; isi PRD dibuat dari jawaban yang kamu berikan dan tetap perlu ditinjau sebelum digunakan untuk membangun.</p>
+          </article>
         </div>
       </section>
 
@@ -322,7 +348,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {features.map((feature, i) => (
               <div
                 key={feature.title}
@@ -359,6 +385,18 @@ export default function HomePage() {
               pilih paket Starter seharga{" "}
               <strong>{PRICING.starter.priceLabel}</strong>/bulan.
             </p>
+            <div className="mx-auto mt-9 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
+              {[
+                ["Sekali Pakai", "Coba satu ide dengan komitmen ringan."],
+                ["Starter", "Untuk kebutuhan PRD rutin dalam satu bulan."],
+                ["Pro", "Kualitas AI lebih kuat untuk pekerjaan produk yang lebih serius."],
+              ].map(([plan, description]) => (
+                <div key={plan} className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+                  <p className="font-bold text-white">{plan}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#fffbeb]/85">{description}</p>
+                </div>
+              ))}
+            </div>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link href="/pricing">
                 <Button
