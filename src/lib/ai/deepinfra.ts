@@ -62,6 +62,25 @@ function parseJsonCompletion(content: string): unknown | null {
   return null;
 }
 
+function describePrdShape(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { topLevel: Array.isArray(value) ? "array" : typeof value };
+  }
+
+  const candidate = value as { title?: unknown; sections?: unknown };
+  return {
+    titleType: typeof candidate.title,
+    sectionCount: Array.isArray(candidate.sections) ? candidate.sections.length : null,
+    sectionIds: Array.isArray(candidate.sections)
+      ? candidate.sections.map((section) => (
+        section && typeof section === "object" && !Array.isArray(section)
+          ? (section as { id?: unknown }).id ?? null
+          : null
+      ))
+      : null,
+  };
+}
+
 export async function createAIPrd(
   answers: PRDAnswers,
   planId: PackageId
@@ -130,7 +149,8 @@ export async function createAIPrd(
 
     const prd = parseAIPrdDocument(decoded);
     if (!prd) {
-      console.error("DeepInfra returned a PRD outside the required schema");
+      // Record contract metadata only. Never log model content or user answers.
+      console.error("DeepInfra returned a PRD outside the required schema", describePrdShape(decoded));
       throw new AIProviderError(502, "Generator AI mengembalikan format PRD yang tidak lengkap. Silakan coba lagi.");
     }
 

@@ -48,14 +48,24 @@ export function parseAIPrdDocument(value: unknown): AIPrdDocument | null {
   if (!title || !Array.isArray(candidate.sections)) return null;
   if (candidate.sections.length !== PRD_SECTION_DEFINITIONS.length) return null;
 
-  const sections: AISection[] = [];
-  for (let index = 0; index < PRD_SECTION_DEFINITIONS.length; index += 1) {
-    const definition = PRD_SECTION_DEFINITIONS[index];
-    const section = candidate.sections[index];
+  // Providers usually preserve the requested order, but ordering is a
+  // presentation concern. Accept a complete, unique set and render it in the
+  // stable application order below. Missing, duplicated, or unknown section
+  // identifiers still make the response invalid.
+  const sectionsById = new Map<string, unknown>();
+  for (const section of candidate.sections) {
     if (!section || typeof section !== "object" || Array.isArray(section)) return null;
+    const item = section as { id?: unknown };
+    if (typeof item.id !== "string" || sectionsById.has(item.id)) return null;
+    sectionsById.set(item.id, section);
+  }
 
-    const item = section as { id?: unknown; content?: unknown };
-    if (item.id !== definition.id) return null;
+  const sections: AISection[] = [];
+  for (const definition of PRD_SECTION_DEFINITIONS) {
+    const section = sectionsById.get(definition.id);
+    if (!section) return null;
+
+    const item = section as { content?: unknown };
 
     const content = normaliseText(item.content, 9000);
     if (!content) return null;
