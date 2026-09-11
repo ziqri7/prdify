@@ -130,11 +130,19 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "SumoPod error");
 
+  // SumoPod returns `payment_id` (not a generic `id`) and a lowercase
+  // lifecycle status. Preserve the provider ID for diagnostics while keeping
+  // the API contract aligned with the application's uppercase statuses.
+  const paymentId = data.payment_id || externalId;
+  const paymentStatus = typeof data.status === "string"
+    ? data.status.toUpperCase()
+    : "PENDING";
+
   return {
-    id: data.id || externalId,
+    id: paymentId,
     external_id: externalId,
     amount,
-    status: data.status || "PENDING",
+    status: paymentStatus,
     payment_method: paymentMethod,
     invoice_url: data.payment_link_url || data.url,
     gateway: "sumopod",
