@@ -1,5 +1,20 @@
 import { NextResponse } from "next/server";
 import { generateDocx } from "@/lib/export-utils";
+import { getAuthenticatedUser } from "@/lib/server-auth";
+
+const MAX_EXPORT_CONTENT_LENGTH = 100_000;
+const MAX_EXPORT_TITLE_LENGTH = 120;
+
+function toSafeDownloadName(value: string): string {
+  const sanitized = value
+    .replace(/[\r\n]/g, " ")
+    .replace(/[\\/:*?\"<>|]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_EXPORT_TITLE_LENGTH);
+
+  return sanitized || "BuatPakeAI-PRD";
+}
 
 async function generatePdfBuffer(
   docTitle: string,
@@ -268,17 +283,29 @@ async function generatePdfBuffer(
 
 export async function POST(request: Request) {
   try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Autentikasi diperlukan" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { format, content, title } = body;
 
-    if (!format || !content) {
+    if (typeof content !== "string" || !content.trim() || typeof format !== "string") {
       return NextResponse.json(
         { error: "Format and content are required" },
         { status: 400 }
       );
     }
 
-    const docTitle = title || "BuatPakeAI-PRD";
+    if (content.length > MAX_EXPORT_CONTENT_LENGTH) {
+      return NextResponse.json(
+        { error: "Isi dokumen terlalu besar untuk diekspor" },
+        { status: 413 }
+      );
+    }
+
+    const docTitle = toSafeDownloadName(typeof title === "string" ? title : "");
 
     switch (format) {
       case "markdown": {

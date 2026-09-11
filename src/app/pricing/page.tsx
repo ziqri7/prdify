@@ -253,12 +253,12 @@ export default function PricingPage() {
             </div>
             <div>
               <h3 className="font-semibold mb-1">
-                Chat AI itu apa?
+                Apakah Chat AI sudah tersedia?
               </h3>
               <p className="text-sm text-[#6a7180] dark:text-gray-400">
-                Chat AI membantu brainstorming ide produk melalui tanya jawab
-                interaktif dengan AI, sebelum PRD digenerate. Fitur ini hanya
-                tersedia di paket Pro dan Pro Tahunan.
+                Belum. Saat ini BuatPakeAI berfokus pada pembuatan PRD dari
+                kuesioner terpandu. Paket Pro dan Pro Tahunan memberi kualitas
+                model AI yang lebih kuat untuk pembuatan PRD, bukan akses Chat AI.
               </p>
             </div>
             <div>

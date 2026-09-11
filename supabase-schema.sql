@@ -518,6 +518,13 @@ DECLARE
   period_end TIMESTAMPTZ;
   document_limit_value INTEGER;
 BEGIN
+  -- This function is only called after a signed webhook is verified. Keep a
+  -- strict allowlist here as defence in depth so an unexpected provider value
+  -- can never move a pending payment into an arbitrary state.
+  IF p_status IS NULL OR p_status NOT IN ('PAID', 'FAILED', 'EXPIRED') THEN
+    RETURN FALSE;
+  END IF;
+
   SELECT * INTO payment_row
   FROM public.payments
   WHERE external_id = p_external_id

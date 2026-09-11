@@ -6,8 +6,8 @@ export const APP_DESCRIPTION =
 // Pricing model: kombinasi pay-per-use + subscription
 // Pay-per-use: Rp 25rb untuk 1 kredit PRD AI
 // Starter: Rp 66k/bln — 5 PRD/bln, akses penuh
-// Pro: Rp 133k/bln — Unlimited PRD + Chat AI
-// Pro Tahunan: Rp 99k/bln (Rp 1.1jt/thn) — Unlimited PRD + Chat AI, termurah
+// Pro: Rp 133k/bln — no monthly PRD quota, subject to fair use.
+// Pro Tahunan: Rp 99k/bln (Rp 1.1jt/thn) — Pro benefits at an annual price.
 
 export const PRICING = {
   pay_per_use: {
@@ -52,13 +52,12 @@ export const PRICING = {
     originalPrice: 200000,
     priceLabel: "Rp 133.000",
     perLabel: "/bulan",
-    description: "PRD tanpa batas kuota bulanan + Chat AI, untuk kebutuhan serius",
+    description: "PRD tanpa batas kuota bulanan, untuk kebutuhan serius",
     discountLabel: "34% OFF",
     features: [
       "PRD tanpa batas kuota bulanan",
       "PRD premium dengan GPT-OSS 120B",
       "Penggunaan wajar: maksimal 10 PRD per jam",
-      "Chat AI untuk brainstorming",
       "Akses penuh & download .md, PDF, DOCX",
       "Edit PRD setelah jadi",
       "Riwayat PRD tersimpan",
@@ -94,7 +93,7 @@ export type PackageId = "pay_per_use" | "starter" | "pro" | "pro_tahunan";
 
 // Map subscription packages to their database package_type
 // pay_per_use & starter → 'basic' di database
-// pro & pro_tahunan → 'pro' di database (karena punya chat AI)
+// pro & pro_tahunan → 'pro' di database (untuk entitlement dan model AI Pro)
 export function getDbPackageType(packageId: PackageId): "basic" | "pro" {
   if (packageId === "pro" || packageId === "pro_tahunan") return "pro";
   return "basic";
