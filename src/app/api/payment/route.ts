@@ -143,7 +143,14 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
         : typeof data.error === "string"
           ? data.error
           : `HTTP ${response.status}`;
-    throw new Error(`SumoPod ${providerMessage}`);
+    const validationFields =
+      data.errors && typeof data.errors === "object" && !Array.isArray(data.errors)
+        ? Object.keys(data.errors as Record<string, unknown>).slice(0, 8)
+        : [];
+    const validationHint = validationFields.length > 0
+      ? ` (fields: ${validationFields.join(", ")})`
+      : "";
+    throw new Error(`SumoPod ${providerMessage}${validationHint}`);
   }
 
   // SumoPod returns `payment_id` (not a generic `id`) and a lowercase
