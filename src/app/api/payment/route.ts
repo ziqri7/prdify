@@ -110,7 +110,6 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
     expires_in_hours: 24,
     success_return_url: successUrl,
     cancel_return_url: `${appUrl}/payment?status=failed`,
-    description: `BuatPakeAI - ${PRICING[pkg as keyof typeof PRICING]?.name || "Paket"} Package`,
     payment_method_type_code: getSumopodPaymentMethod(paymentMethod),
   };
 
@@ -127,13 +126,30 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || "SumoPod error");
+  const rawResponse = await response.text();
+  let data: Record<string, unknown> = {};
+  try {
+    data = JSON.parse(rawResponse) as Record<string, unknown>;
+  } catch {
+    // Use the HTTP status below if SumoPod returns a non-JSON error page.
+  }
+
+  if (!response.ok) {
+    // Only surface the provider's designated human-readable fields. Never
+    // include request headers or an opaque response body in logs/errors.
+    const providerMessage =
+      typeof data.message === "string"
+        ? data.message
+        : typeof data.error === "string"
+          ? data.error
+          : `HTTP ${response.status}`;
+    throw new Error(`SumoPod ${providerMessage}`);
+  }
 
   // SumoPod returns `payment_id` (not a generic `id`) and a lowercase
   // lifecycle status. Preserve the provider ID for diagnostics while keeping
   // the API contract aligned with the application's uppercase statuses.
-  const paymentId = data.payment_id || externalId;
+  const paymentId = typeof data.payment_id === "string" ? data.payment_id : externalId;
   const paymentStatus = typeof data.status === "string"
     ? data.status.toUpperCase()
     : "PENDING";
@@ -144,7 +160,12 @@ async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: 
     amount,
     status: paymentStatus,
     payment_method: paymentMethod,
-    invoice_url: data.payment_link_url || data.url,
+    invoice_url:
+      typeof data.payment_link_url === "string"
+        ? data.payment_link_url
+        : typeof data.url === "string"
+          ? data.url
+          : undefined,
     gateway: "sumopod",
   };
 }
