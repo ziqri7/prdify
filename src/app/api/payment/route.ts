@@ -97,19 +97,14 @@ function getMidtransPaymentMethods(method: string): string[] {
 // ---------------------------------------------------------------------------
 // SUMOPOD PAY
 // ---------------------------------------------------------------------------
-async function createSumopodInvoice(pkg: string, amount: number, paymentMethod: string, prdId: string | null, externalId: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buatpakeai.vercel.app";
-  const successUrl = prdId
-    ? `${appUrl}/preview/${prdId}?payment=success`
-    : `${appUrl}/dashboard?payment=pending`;
-
+async function createSumopodInvoice(amount: number, paymentMethod: string, externalId: string) {
+  // Keep the sandbox request to SumoPod's required fields. Return URLs and
+  // expiry are optional there and can be configured centrally in the merchant
+  // dashboard once the payment flow is verified end-to-end.
   const payload = {
     order_id: externalId,
     amount,
     currency: "IDR",
-    expires_in_hours: 24,
-    success_return_url: successUrl,
-    cancel_return_url: `${appUrl}/payment?status=failed`,
     payment_method_type_code: getSumopodPaymentMethod(paymentMethod),
   };
 
@@ -496,7 +491,7 @@ export async function POST(request: Request) {
             result = await createMidtransInvoice(pkg, amount, paymentMethod, prdId || null, externalId);
             break;
           case "sumopod":
-            result = await createSumopodInvoice(pkg, amount, paymentMethod, prdId || null, externalId);
+            result = await createSumopodInvoice(amount, paymentMethod, externalId);
             break;
           case "doku":
             result = await createDokuInvoice(pkg, amount, paymentMethod, prdId || null, externalId);
