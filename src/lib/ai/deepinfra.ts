@@ -39,6 +39,29 @@ function getModelForPlan(planId: PackageId): string {
     || DEFAULT_MODEL;
 }
 
+function parseJsonCompletion(content: string): unknown | null {
+  const candidates = [content.trim()];
+  const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) candidates.push(fenced[1].trim());
+
+  // Some compatible OpenAI endpoints prepend a short explanation before the
+  // requested JSON. Parse only the outermost object; schema validation below
+  // still rejects anything that is not a valid PRD contract.
+  const start = content.indexOf("{");
+  const end = content.lastIndexOf("}");
+  if (start >= 0 && end > start) candidates.push(content.slice(start, end + 1));
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // Try the next safe representation.
+    }
+  }
+
+  return null;
+}
+
 export async function createAIPrd(
   answers: PRDAnswers,
   planId: PackageId
@@ -93,10 +116,8 @@ export async function createAIPrd(
       throw new AIProviderError(502, "Generator AI mengembalikan respons kosong. Silakan coba lagi.");
     }
 
-    let decoded: unknown;
-    try {
-      decoded = JSON.parse(content);
-    } catch {
+    const decoded = parseJsonCompletion(content);
+    if (decoded === null) {
       console.error("DeepInfra returned invalid JSON");
       throw new AIProviderError(502, "Generator AI mengembalikan format yang tidak valid. Silakan coba lagi.");
     }
