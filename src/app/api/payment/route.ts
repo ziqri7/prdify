@@ -409,7 +409,10 @@ export async function POST(request: Request) {
 
     // Persist the order before contacting a gateway. A fast webhook can then
     // always find a PENDING payment, and a failed gateway call can be audited.
-    const externalId = `BPAI-${requestedPackage}-${randomUUID()}`;
+    // Keep the provider-facing order ID conservative: SumoPod's documented
+    // examples use an alphanumeric, hyphen-only identifier. Package metadata
+    // is already stored separately in the payment row.
+    const externalId = `BPAI-${Date.now()}-${randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const { data: payment, error: paymentCreateError } = await supabaseAdmin
       .from("payments")
       .insert({
