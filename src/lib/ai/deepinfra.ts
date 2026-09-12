@@ -112,13 +112,9 @@ export async function createAIPrd(
         model: getModelForPlan(planId),
         messages: buildPRDMessages(answers),
         temperature: 0.35,
-        // The contract asks for 11 actionable sections (roughly 1,500–1,900
-        // Indonesian words). 3,000 tokens can truncate JSON before its final
-        // closing brace, which looks like an invalid provider response and
-        // needlessly retries a paid generation. Keep enough headroom for the
-        // complete structured document; model selection still limits cost by
-        // plan on the server.
-        max_tokens: 6000,
+        // This is enough headroom for 11 useful Starter sections while keeping
+        // the synchronous provider call inside the serverless time budget.
+        max_tokens: 4500,
         // The PRD contract already supplies the required planning structure.
         // Disabling the provider's hidden reasoning trace keeps each paid
         // generation faster and avoids paying for reasoning tokens users never see.

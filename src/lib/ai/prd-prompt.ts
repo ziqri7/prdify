@@ -2,8 +2,8 @@ import type { PRDAnswers } from "@/lib/prd-generator";
 import { PRD_SECTION_DEFINITIONS } from "./prd-schema";
 
 const sectionContract = PRD_SECTION_DEFINITIONS.map(({ id, title }) =>
-  `- ${id}: ${title}`
-).join("\n");
+  `  "${id}": "isi markdown bagian ${title}"`
+).join(",\n");
 
 const sectionWritingGuide = `
 - executive_summary: nilai produk, masalah, cakupan MVP, yang di luar cakupan, dan hasil yang ingin dicapai.
@@ -40,13 +40,15 @@ Aturan ketat anti-halusinasi:
 Gunakan panduan penulisan setiap bagian ini:
 ${sectionWritingGuide}
 
-Tetap praktis untuk MVP dan selaraskan prioritas dengan timeline serta budget pengguna. Buat dokumen padat tetapi bernilai: targetkan 1.500–1.900 kata total, maksimal 170 kata per bagian, gunakan daftar bila lebih mudah ditindaklanjuti.
+Tetap praktis untuk MVP dan selaraskan prioritas dengan timeline serta budget pengguna. Buat dokumen padat tetapi bernilai: targetkan 1.200–1.500 kata total, maksimal 140 kata per bagian, gunakan daftar bila lebih mudah ditindaklanjuti.
 
 Balas SEMATA-MATA sebagai JSON valid tanpa markdown fence, dengan bentuk:
-{"title":"judul PRD singkat tanpa awalan PRD:","sections":[{"id":"...","content":"markdown isi"}]}
+{"title":"judul PRD singkat tanpa awalan PRD:","sections":{"id_bagian":"markdown isi"}}
 
-sections harus tepat 11 item, urut, menggunakan id berikut. Jangan tambahkan title pada item dan jangan gunakan heading level 1 atau 2 di dalam content:
-${sectionContract}`,
+sections harus berupa objek dengan tepat 11 key berikut. Jangan tambahkan key lain dan jangan gunakan heading level 1 atau 2 di dalam content:
+{
+${sectionContract}
+}`,
     },
     {
       role: "user" as const,
