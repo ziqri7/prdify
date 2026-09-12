@@ -1,13 +1,38 @@
 import "server-only";
 
 import { buildPRDMessages } from "./prd-prompt";
-import { parseAIPrdDocument, type AIPrdDocument } from "./prd-schema";
+import {
+  PRD_SECTION_DEFINITIONS,
+  parseAIPrdDocument,
+  type AIPrdDocument,
+} from "./prd-schema";
 import type { PRDAnswers } from "@/lib/prd-generator";
 import type { PackageId } from "@/lib/constants";
 
 const DEEPINFRA_URL = "https://api.deepinfra.com/v1/openai/chat/completions";
 const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731";
 const DEFAULT_PRO_MODEL = "openai/gpt-oss-120b";
+
+const PRD_RESPONSE_SCHEMA = {
+  name: "prd_document",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      sections: {
+        type: "object",
+        properties: Object.fromEntries(
+          PRD_SECTION_DEFINITIONS.map(({ id }) => [id, { type: "string" }])
+        ),
+        required: PRD_SECTION_DEFINITIONS.map(({ id }) => id),
+        additionalProperties: false,
+      },
+    },
+    required: ["title", "sections"],
+    additionalProperties: false,
+  },
+} as const;
 
 export class AIProviderError extends Error {
   constructor(
@@ -119,7 +144,10 @@ export async function createAIPrd(
         // Disabling the provider's hidden reasoning trace keeps each paid
         // generation faster and avoids paying for reasoning tokens users never see.
         reasoning_effort: "none",
-        response_format: { type: "json_object" },
+        response_format: {
+          type: "json_schema",
+          json_schema: PRD_RESPONSE_SCHEMA,
+        },
       }),
       signal: controller.signal,
       cache: "no-store",
