@@ -68,8 +68,12 @@ function describePrdShape(value: unknown): Record<string, unknown> {
   }
 
   const candidate = value as { title?: unknown; sections?: unknown };
+  const sectionsAreObject = Boolean(
+    candidate.sections && typeof candidate.sections === "object" && !Array.isArray(candidate.sections)
+  );
   return {
     titleType: typeof candidate.title,
+    sectionsType: Array.isArray(candidate.sections) ? "array" : typeof candidate.sections,
     sectionCount: Array.isArray(candidate.sections) ? candidate.sections.length : null,
     sectionIds: Array.isArray(candidate.sections)
       ? candidate.sections.map((section) => (
@@ -78,6 +82,7 @@ function describePrdShape(value: unknown): Record<string, unknown> {
           : null
       ))
       : null,
+    sectionKeys: sectionsAreObject ? Object.keys(candidate.sections as object) : null,
   };
 }
 
