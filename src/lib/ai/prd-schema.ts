@@ -45,19 +45,33 @@ export function parseAIPrdDocument(value: unknown): AIPrdDocument | null {
 
   const candidate = value as { title?: unknown; sections?: unknown };
   const title = normaliseText(candidate.title, 180);
-  if (!title || !Array.isArray(candidate.sections)) return null;
-  if (candidate.sections.length !== PRD_SECTION_DEFINITIONS.length) return null;
+  if (!title || !candidate.sections || typeof candidate.sections !== "object") return null;
 
   // Providers usually preserve the requested order, but ordering is a
   // presentation concern. Accept a complete, unique set and render it in the
   // stable application order below. Missing, duplicated, or unknown section
   // identifiers still make the response invalid.
   const sectionsById = new Map<string, unknown>();
-  for (const section of candidate.sections) {
-    if (!section || typeof section !== "object" || Array.isArray(section)) return null;
-    const item = section as { id?: unknown };
-    if (typeof item.id !== "string" || sectionsById.has(item.id)) return null;
-    sectionsById.set(item.id, section);
+  if (Array.isArray(candidate.sections)) {
+    if (candidate.sections.length !== PRD_SECTION_DEFINITIONS.length) return null;
+
+    for (const section of candidate.sections) {
+      if (!section || typeof section !== "object" || Array.isArray(section)) return null;
+      const item = section as { id?: unknown };
+      if (typeof item.id !== "string" || sectionsById.has(item.id)) return null;
+      sectionsById.set(item.id, section);
+    }
+  } else {
+    const entries = Object.entries(candidate.sections);
+    if (entries.length !== PRD_SECTION_DEFINITIONS.length) return null;
+
+    for (const [id, section] of entries) {
+      if (sectionsById.has(id)) return null;
+      // A few OpenAI-compatible providers represent the requested collection
+      // as { section_id: "content" }. Treat it as the equivalent structured
+      // item, while preserving the same exact ID and non-empty-content checks.
+      sectionsById.set(id, typeof section === "string" ? { content: section } : section);
+    }
   }
 
   const sections: AISection[] = [];
